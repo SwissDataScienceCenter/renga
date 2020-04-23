@@ -1,0 +1,4 @@
+name: renku
+runtime: python
+description: RENKU (連句) is a software platform designed to foster multidisciplinary
+  (data) science collaboration.
