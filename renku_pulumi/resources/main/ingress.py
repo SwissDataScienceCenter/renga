@@ -11,6 +11,8 @@ def ingress(global_config, dependencies=[]):
     is_dev = config.get_bool("dev")
     k8s_config = pulumi.Config("kubernetes")
 
+    dependencies = [d for d in dependencies if d]
+
     if not ingress_config.get_bool("enabled"):
         return
 

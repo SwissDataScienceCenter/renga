@@ -2,15 +2,14 @@ import pulumi
 from pulumi_random.random_id import RandomId
 
 from charts import (
-    renku_ui,
-    renku_graph,
-    renku_notebooks,
-    postgresql,
-    minio,
-    keycloak,
-    keycloak_secrets,
-    gitlab,
-    redis,
+    UIChart,
+    GraphChart,
+    NotebooksChart,
+    PostgresChart,
+    MinioChart,
+    KeycloakChart,
+    GitlabChart,
+    RedisChart,
 )
 
 from resources.main import (
@@ -89,9 +88,6 @@ def get_global_values(config):
 def deploy():
     config = pulumi.Config()
 
-    chart_reqs = ConfigParser()
-    chart_reqs.read("chart_requirements.ini")
-
     global_values = get_global_values(config)
 
     # global config is used to propagate dynamic values
@@ -103,7 +99,7 @@ def deploy():
     rs = renku_secret(global_config)
 
     # ui
-    ui = renku_ui(config, global_config, chart_reqs)
+    ui = UIChart(config, global_config)
 
     postgres = None
     postgres_job = None
@@ -116,11 +112,11 @@ def deploy():
     graph_postgres, graph_token = graph_secrets()
 
     if config.require_bool("postgres_enabled"):
-        postgres = postgresql(config, global_config, chart_reqs)
+        postgres = PostgresChart(config, global_config)
 
     jupyterhub_secret = jupyterhub_secrets()
-    notebooks = renku_notebooks(
-        config, global_config, chart_reqs, jupyterhub_secret, postgres, dependencies=[postgres_job, gitlab_job]
+    notebooks = NotebooksChart(
+        config, postgres, jupyterhub_secret, global_config, dependencies=[postgres_job, gitlab_job]
     )
 
     config_map = configmap(global_config)
@@ -131,23 +127,22 @@ def deploy():
     postgres_job = postgres_postinstall_job(global_config, graph_postgres, graph_token, config_map, gitlab_postgres_secret=gitlab_postgres_secret, dependencies=[postgres, gitlab_postgres_secret])
 
     if config.require_bool("keycloak_enabled"):
-        keycloak_postgres, keycloak_password, keycloak_users = keycloak_secrets(global_config)
-        keycloak_chart = keycloak(config, global_config, chart_reqs, postgres, [postgres_job])
+        keycloak_chart = KeycloakChart(config, postgres, global_config, [postgres_job])
 
     if config.require_bool("gitlab_enabled"):
-        gitlab_chart = gitlab(config, global_config, chart_reqs, postgres, gitlab_postgres_secret, [postgres_job, keycloak_chart])
+        gitlab_chart = GitlabChart(config, postgres, gitlab_postgres_secret, global_config, [postgres_job, keycloak_chart])
         gitlab_job = gitlab_postinstall_job(global_config, config_map, rs, gitlab_postgres_secret, gitlab_chart)
 
     if config.require_bool("graph_enabled"):
-        graph = renku_graph(config, global_config, chart_reqs, graph_postgres, graph_token, postgres, dependencies=[gitlab_job])
+        graph = GraphChart(config, graph_postgres, graph_token, postgres, global_config=global_config, dependencies=[gitlab_job])
 
     if config.require_bool("minio_enabled"):
-        minio(config, global_config)
+        MinioChart(config, global_config)
 
     gateway_values = gateway.gateway_values(global_config)
 
     # gateway
-    redis_chart = redis(global_config, chart_reqs)
+    redis_chart = RedisChart(config, global_config)
     gateway_secret = gateway.secret(global_config, gateway_values)
     gateway_config = gateway.configmaps(global_config, gateway_values)
     gateway.ingress(global_config, gateway_values)
@@ -162,7 +157,14 @@ def deploy():
 
     if config.require_bool("keycloak_enabled"):
         keycloak_postinstall_job(
-            global_config, keycloak_users, [keycloak_chart, keycloak_postgres, keycloak_password, renku_ingress, gitlab_job]
+            global_config, keycloak_chart.keycloak_user_secret,
+            [
+                keycloak_chart,
+                keycloak_chart.keycloak_postgres_secret,
+                keycloak_chart.keycloak_password_secret,
+                renku_ingress,
+                gitlab_job
+            ]
         )
 
     pulumi.export('global_config', pulumi.Output.secret(global_config))

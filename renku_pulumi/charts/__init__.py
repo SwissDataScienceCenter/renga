@@ -1,11 +1,11 @@
-from .gitlab import gitlab
-from .keycloak import keycloak, keycloak_secrets
-from .minio import minio
-from .postgresql import postgresql
-from .redis import redis
-from .renku_graph import renku_graph
-from .renku_notebooks import renku_notebooks
-from .renku_ui import renku_ui
+from .gitlab import GitlabChart
+from .keycloak import KeycloakChart
+from .minio import MinioChart
+from .postgresql import PostgresChart
+from .redis import RedisChart
+from .renku_graph import GraphChart
+from .renku_notebooks import NotebooksChart
+from .renku_ui import UIChart
 
 
-__ALL__ = [renku_ui, renku_graph, renku_notebooks, postgresql, minio, keycloak, gitlab]
+__ALL__ = [renku_ui, GraphChart, renku_notebooks, postgresql, minio, KeycloakChart, GitlabChart]

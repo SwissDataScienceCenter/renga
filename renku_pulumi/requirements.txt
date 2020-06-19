@@ -1,5 +1,5 @@
-pulumi==1.11.1
-pulumi-kubernetes==1.5.5
-pulumi-random==1.5.0
+pulumi==2.4.0
+pulumi-kubernetes==2.3.1
+pulumi-random==2.1.3
 jinja2==2.10.3
 deepmerge==0.1.0

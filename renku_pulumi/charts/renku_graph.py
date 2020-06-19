@@ -1,116 +1,95 @@
-from base64 import b64encode
-
+from .base_chart import BaseChart
 import pulumi
-from pulumi_kubernetes.helm.v2 import Chart, ChartOpts, FetchOpts
-from pulumi_random.random_password import RandomPassword
-from pulumi_random.random_id import RandomId
-from deepmerge import always_merger
-
-default_chart_values = {
-    "jena": {
-        "users": {"admin": {}, "renku": {}},
-        "resources": {"requests": {"cpu": "200m", "memory": "1Gi"}},
-        "persistence": {"storageClass": "temporary"},
-    },
-    "gitlab": {},
-    "webhookService": {
-        "hookToken": {},
-        "eventsSynchronization": {"initialDelay": "2 minutes", "interval": "1 hour"},
-    },
-    "tokenRepository": {"tokenEncryption": {}},
-    "resources": {"requests": {"cpu": "100m", "memory": "2Gi"}},
-}
 
 
-def renku_graph(
-    config, global_config, chart_reqs, postgres_secret, token_secret, postgres_chart, dependencies=[]
-):
-    graph_config = pulumi.Config("graph")
-    values = graph_config.get_object("values") or {}
+class GraphChart(BaseChart):
+    """Renku Graph chart."""
+    name = "graph"
+    chart_name = "renku-graph"
+    default_values_template = {
+        "jena": {
+            "users": {"admin": {}, "renku": {}},
+            "resources": {"requests": {"cpu": "200m", "memory": "1Gi"}},
+            "persistence": {"storageClass": "temporary"},
+        },
+        "gitlab": {},
+        "webhookService": {
+            "hookToken": {},
+            "eventsSynchronization": {
+                "initialDelay": "2 minutes", "interval": "1 hour"},
+        },
+        "tokenRepository": {"tokenEncryption": {}},
+        "resources": {"requests": {"cpu": "100m", "memory": "2Gi"}},
+    }
 
-    if config.get_bool("dev"):
-        default_chart_values["jena"]["users"]["admin"]["password"] = RandomPassword(
-            "graph_jena_admin_password",
-            length=8,
-            special=False,
-            number=True,
-            upper=False,
-            lower=True,
-        ).result.apply(lambda r: b64encode(r.encode()).decode("ascii"))
+    def __init__(self, config, postgres_secret, token_secret, postgres_chart,
+                 global_config=None, dependencies=[]):
+        self.postgres_secret = postgres_secret
+        self.token_secret = token_secret
+        self.postgres_chart = postgres_chart
 
-        default_chart_values["jena"]["users"]["renku"]["password"] = RandomPassword(
-            "graph_jena_renku_password",
-            length=8,
-            special=False,
-            number=True,
-            upper=False,
-            lower=True,
-        ).result.apply(lambda r: b64encode(r.encode()).decode("ascii"))
+        dependencies = [self.postgres_secret, self.token_secret] + dependencies
 
-        default_chart_values["webhookService"]["hookToken"]["secret"] = RandomId(
-            "graph_webhookservice_secret", byte_length=8
-        ).hex.apply(lambda r: b64encode(r.encode()).decode("ascii"))
+        if postgres_chart:
+            dependencies.append(self.postgres_chart)
 
-        default_chart_values["tokenRepository"]["tokenEncryption"]["secret"] = RandomId(
-            "graph_tokenrepository_secret", byte_length=8
-        ).hex.apply(lambda r: b64encode(r.encode()).decode("ascii"))
+        dependencies = [d for d in dependencies if d]
 
-        baseurl = config.get("baseurl")
+        super().__init__(
+            config, global_config=global_config, dependencies=dependencies)
 
-        if baseurl:
-            default_chart_values["gitlab"]["url"] = "https://{}/gitlab".format(baseurl)
+    @property
+    def default_values(self):
+        """Get chart default values."""
+        default_values = super().default_values
 
-    values = always_merger.merge(default_chart_values, values)
+        config = pulumi.Config()
 
-    k8s_config = pulumi.Config("kubernetes")
+        if config.get_bool("dev"):
+            default_values["jena"]["users"]["admin"]["password"] = \
+                self.generate_random_password("graph_jena_admin_password", 8)
 
-    values["global"] = global_config["global"]
+            default_values["jena"]["users"]["renku"]["password"] = \
+                self.generate_random_password("graph_jena_renku_password", 8)
 
-    sentry = config.get("sentry_dsn")
+            default_values["webhookService"]["hookToken"]["secret"] = \
+                self.generate_random_id("graph_webhookservice_secret")
 
-    if sentry:
-        sent = values.setdefault("sentry", {})
-        sent.setdefault("sentryDsnRenkuPython", sentry)
+            default_values["tokenRepository"]["tokenEncryption"]["secret"] = \
+                self.generate_random_id("graph_tokenrepository_secret")
 
-    stack = pulumi.get_stack()
+            baseurl = config.get("baseurl")
 
-    if postgres_chart and "postgresqlHost" not in values:
-        values["postgresqlHost"] = postgres_chart.resources.apply(
-            lambda r: next(s for k, s in r.items() if k.startswith("v1/Service"))
-        ).metadata["name"]
+            if baseurl:
+                default_values["gitlab"]["url"] = "https://{}/gitlab".format(
+                    baseurl)
 
-    values["global"]["graph"]["dbEventLog"][
-        "existingSecret"
-    ] = postgres_secret.metadata["name"]
-    values["global"]["graph"]["tokenRepository"][
-        "existingSecret"
-    ] = token_secret.metadata["name"]
+        return default_values
 
-    global_config["graph"] = values
+    def values_post_process(self, values):
+        values = super().values_post_process(values)
 
-    dependencies = [postgres_secret, token_secret] + dependencies
+        values["global"] = self.global_config["global"]
 
-    if postgres_chart:
-        dependencies.append(postgres_chart)
+        config = pulumi.Config()
 
-    dependencies = [d for d in dependencies if d]
+        sentry = config.get("sentry_dsn")
 
-    chart_repo = chart_reqs.get("graph", "repository")
-    if chart_repo.startswith("http"):
-        repo = None
-        fetchopts = FetchOpts(repo=chart_repo)
-    else:
-        repo = chart_repo
-        fetchopts = None
+        if sentry:
+            sent = values.setdefault("sentry", {})
+            sent.setdefault("sentryDsnRenkuPython", sentry)
 
-    return Chart(
-        "{}-graph".format(stack),
-        config=ChartOpts(
-            chart="renku-graph",
-            version=chart_reqs.get("graph", "version"),
-            repo=repo,
-            fetch_opts=fetchopts,
-            values=values,
-        ),
-        opts=pulumi.ResourceOptions(depends_on=dependencies),
-    )
+        if self.postgres_chart and "postgresqlHost" not in values:
+            values["postgresqlHost"] = self.postgres_chart.resources.apply(
+                lambda r: next(s for k, s in r.items()
+                               if k.startswith("v1/Service"))
+            ).metadata["name"]
+
+        values["global"]["graph"]["dbEventLog"][
+            "existingSecret"
+        ] = self.postgres_secret.metadata["name"]
+        values["global"]["graph"]["tokenRepository"][
+            "existingSecret"
+        ] = self.token_secret.metadata["name"]
+
+        return values

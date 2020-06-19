@@ -1,43 +1,45 @@
+from .base_chart import BaseChart
 import pulumi
-from pulumi_kubernetes.helm.v2 import Chart, ChartOpts, FetchOpts
-from deepmerge import always_merger
-
-default_chart_values = {
-    "nameOverride": "gw-redis",
-    "cluster": {"enabled": False},
-    "usePassword": False,
-    "networkPolicy": {"enabled": True, "allowExternal": False},
-    "master": {
-        "persistence": {"enabled": False},
-        "resources": {"requests": {"cpu": "100m", "memory": "512Mi"}},
-    },
-}
+from pulumi_kubernetes.helm.v2 import ChartOpts
 
 
-def redis(global_config, chart_reqs):
-    redis_config = pulumi.Config("redis")
-    values = redis_config.get_object("values") or {}
+def delete_before_replace_resources(obj, opts):
+    """change some resources to be deleted before upgrade to fix deployment errors."""
+    types = ["PodDisruptionBudget", "RoleBinding", "Role", "ServiceAccount", "NetworkPolicy"]
 
-    values = always_merger.merge(default_chart_values, values)
+    if obj["kind"] in types:
+        opts.delete_before_replace = True
 
-    global_config["redis"] = {"fullname": "{}-redis".format(pulumi.get_stack())}
+class RedisChart(BaseChart):
+    """Renku Redis chart."""
 
-    values["global"] = global_config["global"]
+    name = "redis"
+    default_values_template = {
+        "nameOverride": "gw-redis",
+        "cluster": {"enabled": False},
+        "usePassword": False,
+        "networkPolicy": {"enabled": True, "allowExternal": False},
+        "master": {
+            "persistence": {"enabled": False},
+            "resources": {"requests": {"cpu": "100m", "memory": "512Mi"}},
+        },
+    }
 
-    chart_repo = chart_reqs.get("redis", "repository")
-    if chart_repo.startswith("http"):
-        repo = None
-        fetchopts = FetchOpts(repo=chart_repo)
-    else:
-        repo = chart_repo
-        fetchopts = None
-    return Chart(
-        global_config["redis"]["fullname"],
-        config=ChartOpts(
-            chart="redis",
-            repo=repo,
-            fetch_opts=fetchopts,
-            version=chart_reqs.get("redis", "version"),
-            values=values,
-        ),
-    )
+    def __init__(self, config, global_config=None, dependencies=[]):
+        global_config["redis"] = {"fullname": "{}-redis".format(pulumi.get_stack())}
+        self.release_name = global_config["redis"]["fullname"]
+
+        super().__init__(config, global_config=global_config, dependencies=dependencies)
+
+
+    @property
+    def chart_opts(self):
+        """Get the Chart config."""
+        return ChartOpts(
+            chart=self.chart_name,
+            version=self.chart_version,
+            repo=self.chart_repo,
+            fetch_opts=self.fetch_opts,
+            values=self.values,
+            transformations=[delete_before_replace_resources]
+        )

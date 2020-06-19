@@ -1,52 +1,51 @@
 import pulumi
 from pulumi.resource import CustomTimeouts
-from pulumi_kubernetes.helm.v2 import Chart, ChartOpts, FetchOpts
-from pulumi_random.random_password import RandomPassword
-from deepmerge import always_merger
 
-default_chart_values = {
-    "password": "gitlabadmin",
-    "oauth": {"autoSignIn": True},
-    "demoUserIsAdmin": False,
-}
+from .base_chart import BaseChart
 
 
-def gitlab(config, global_config, chart_reqs, postgres_chart, gitlab_postgres_secret, dependencies=[]):
-    gitlab_config = pulumi.Config("gitlab")
-    values = gitlab_config.get_object("values") or {}
+class GitlabChart(BaseChart):
+    """Gitlab Chart."""
 
-    if postgres_chart:
-        default_chart_values["postgresqlHost"] = postgres_chart.resources.apply(
-            lambda r: next(s for k, s in r.items() if k.startswith("v1/Service"))
-        ).metadata["name"]
+    name = "gitlab"
+    default_values_template = {
+        "password": "gitlabadmin",
+        "oauth": {"autoSignIn": True},
+        "demoUserIsAdmin": False,
+    }
 
-    if gitlab_postgres_secret:
-        default_chart_values['postgresSecret'] = gitlab_postgres_secret.metadata['name']
+    def __init__(self, config, postgres_chart, gitlab_postgres_secret,
+                 global_config=None, dependencies=[]):
+        self.postgres_chart = postgres_chart
+        self.gitlab_postgres_secret = gitlab_postgres_secret
 
-    values = always_merger.merge(default_chart_values, values)
+        self.release_name = pulumi.get_stack()
 
-    global_config['gitlab'] = values
+        dependencies = [d for d in dependencies if d]
 
-    values["global"] = global_config["global"]
+        super().__init__(
+            config, global_config=global_config, dependencies=dependencies)
 
-    chart_repo = chart_reqs.get("gitlab", "repository")
-    if chart_repo.startswith("http"):
-        repo = None
-        fetchopts = FetchOpts(repo=chart_repo)
-    else:
-        repo = chart_repo
-        fetchopts = None
+    @property
+    def opts(self):
+        return pulumi.ResourceOptions(
+            depends_on=self.dependencies,
+            custom_timeouts=CustomTimeouts(create="30m"))
 
-    dependencies = [d for d in dependencies if d]
+    @property
+    def default_values(self):
+        """Get chart default values."""
+        default_values = super().default_values
+        if self.postgres_chart:
+            default_values["postgresqlHost"] = self.delayed_chart_property(
+                self.postgres_chart, lambda k, s: k.startswith("v1/Service"),
+                "name")
 
-    return Chart(
-        pulumi.get_stack(),
-        config=ChartOpts(
-            chart="gitlab",
-            repo=repo,
-            fetch_opts=fetchopts,
-            version=chart_reqs.get("gitlab", "version"),
-            values=values,
-        ),
-        opts=pulumi.ResourceOptions(depends_on=dependencies, custom_timeouts=CustomTimeouts(create="30m")),
-    )
+        if self.gitlab_postgres_secret:
+            default_values['postgresSecret'] = \
+                self.gitlab_postgres_secret.metadata['name']
+
+        return default_values
+
+    def values_post_process(self, values):
+        values = super().values_post_process(values)

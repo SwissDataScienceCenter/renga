@@ -111,6 +111,8 @@ def keycloak_postinstall_job(global_config, keycloak_user_secret, dependencies=[
 
     name = "{}-post-install-keycloak".format(stack)
 
+    dependencies = [d for d in dependencies if d]
+
     return Job(
         name,
         metadata={"labels": {"app": pulumi.get_project(), "release": stack}},
@@ -207,6 +209,8 @@ def postgres_postinstall_job(
     renku_name = "{}-{}".format(stack, project)
 
     name = "{}-post-install-postgres".format(stack)
+
+    dependencies = [d for d in dependencies if d]
 
     volume_mounts = [
         {"name": "scripts", "mountPath": "/scripts", "readOnly": True},
