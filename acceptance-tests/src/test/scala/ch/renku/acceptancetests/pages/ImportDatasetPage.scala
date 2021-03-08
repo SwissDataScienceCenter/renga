@@ -24,12 +24,10 @@ import org.scalactic.source
 import org.scalatestplus.selenium.WebBrowser.{cssSelector, find}
 
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
-object DatasetPage {
-  def apply(datasetName: DatasetName)(implicit projectPage: ProjectPage) = new DatasetPage(datasetName, projectPage)
-}
-
-class DatasetPage(datasetName: DatasetName, projectPage: ProjectPage)
+// Pamela to check/complete/fix
+class ImportDatasetPage(datasetName: DatasetName, projectPage: ProjectPage)
     extends RenkuPage(
       path = s"${projectPage.path}/datasets/$datasetName",
       title = "Renku"
@@ -45,11 +43,6 @@ class DatasetPage(datasetName: DatasetName, projectPage: ProjectPage)
   def modifyButton(implicit webDriver: WebDriver): WebElement = eventually {
     find(cssSelector("a[href='modify']")) getOrElse fail("Dataset -> Modify button not found")
   }
-
-  def link(to: DatasetPage)(implicit webDriver: WebDriver): WebElement = eventually {
-    find(cssSelector(s"td a[href='${to.path}' i]"))
-      .getOrElse(fail(s"Dataset '${to.path}' not found"))
-  }(waitUpTo(20 seconds), implicitly[source.Position])
 
   object ProjectsList {
     def link(to: ProjectPage)(implicit webDriver: WebDriver): WebElement = eventually {
@@ -74,22 +67,6 @@ class DatasetPage(datasetName: DatasetName, projectPage: ProjectPage)
 
     def datasetDescriptionField(implicit webDriver: WebDriver): WebElement = eventually {
       find(cssSelector("div[role='textbox']")) getOrElse fail("Dataset description field not found")
-    }
-
-    def datasetSubmitButton(implicit webDriver: WebDriver): WebElement = eventually {
-      find(cssSelector("button[type='submit']")) getOrElse fail("Dataset form submit button not found")
-    }
-
-  }
-
-  object ImportForm {
-
-    def formTitle(implicit webDriver: WebDriver): WebElement = eventually {
-      find(cssSelector("h3.uk-heading-divider")) getOrElse fail("Form title not found")
-    }
-
-    def datasetURLField(implicit webDriver: WebDriver): WebElement = eventually {
-      find(cssSelector("input[name='uri']")) getOrElse fail("Dataset title field not found")
     }
 
     def datasetSubmitButton(implicit webDriver: WebDriver): WebElement = eventually {

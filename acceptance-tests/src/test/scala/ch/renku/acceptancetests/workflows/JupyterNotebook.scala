@@ -18,7 +18,7 @@
 
 package ch.renku.acceptancetests.workflows
 
-import ch.renku.acceptancetests.model.datasets.DatasetName
+import ch.renku.acceptancetests.model.datasets.{DatasetDir, DatasetName}
 import ch.renku.acceptancetests.pages.JupyterLabPage
 import ch.renku.acceptancetests.tooling.{AcceptanceSpec, KnowledgeGraphApi}
 
@@ -33,6 +33,14 @@ trait JupyterNotebook extends Datasets with Project with KnowledgeGraphApi {
     terminal %> s"renku dataset create '$datasetName'" sleep (2 seconds)
     And("pushes it")
     terminal %> "git push" sleep (30 seconds)
+  }
+
+  def `verify zipped dataset`(jupyterLabPage: JupyterLabPage, datasetDir: DatasetDir): Unit = {
+    import jupyterLabPage.terminal
+
+    val listZippedDatasetOutput = terminal %> s"unzip -l '$datasetDir'"
+    Then("The output is ")
+    // check listZippedDatasetOutput is not the same as 'unzip:  cannot find or open data'
   }
 
   def `verify user can work with Jupyter notebook`: Unit = {
@@ -51,5 +59,17 @@ trait JupyterNotebook extends Datasets with Project with KnowledgeGraphApi {
 
     Then("the user can see the created dataset")
     `verify dataset was created`(datasetName)
+  }
+
+  def `verify auto LFS dataset on Jupyter Notebook`(datasetDir: DatasetDir): Unit = {
+    val jupyterLabPage = `launch an environment with Auto Fetch`
+
+    When("the user clicks on the Terminal icon")
+    click on jupyterLabPage.terminalIcon sleep (2 seconds)
+
+    And("the user verifies the dataset is pulled from LFS")
+    `verify zipped dataset`(jupyterLabPage, datasetDir)
+
+    `stop environment`
   }
 }

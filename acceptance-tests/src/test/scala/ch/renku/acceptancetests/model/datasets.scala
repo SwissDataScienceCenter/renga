@@ -30,6 +30,14 @@ object datasets {
     override lazy val toString: String = value
   }
 
+  final case class DatasetURL(value: String) {
+    override lazy val toString: String = value
+  }
+
+  final case class DatasetDir(value: String) {
+    override lazy val toString: String = value
+  }
+
   object DatasetName {
     def generate: DatasetName = DatasetName(nonEmptyStrings().generateOne)
   }

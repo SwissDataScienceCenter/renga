@@ -19,7 +19,7 @@
 package ch.renku.acceptancetests.workflows
 
 import ch.renku.acceptancetests.model.datasets
-import ch.renku.acceptancetests.model.datasets.DatasetName
+import ch.renku.acceptancetests.model.datasets.{DatasetName, DatasetURL}
 import ch.renku.acceptancetests.pages.DatasetPage
 import ch.renku.acceptancetests.tooling.{AcceptanceSpec, KnowledgeGraphApi}
 import org.openqa.selenium.{WebDriver, WebElement}
@@ -70,6 +70,38 @@ trait Datasets {
     verify browserAt datasetPage
     verify that datasetPage.datasetTitle contains datasetName.value
     datasetPage.ProjectsList.link(projectPage).isDisplayed shouldBe true
+
+    datasetPage
+  }
+
+  def `import a dataset`(datasetURL: DatasetURL, datasetName: DatasetName): DatasetPage = {
+    import Import._
+    val generatedDatasetName = datasets.DatasetName.generate
+    val newDatasetPage       = DatasetPage(generatedDatasetName)
+    Given("the user is on the Datasets tab")
+    click on projectPage.Datasets.tab
+
+    When("the user clicks on the Add Dataset button")
+    click on projectPage.Datasets.addADatasetButton
+    verify that newDatasetPage.ModificationForm.formTitle contains "Add Dataset"
+
+    When("the user clicks on the Import Dataset button")
+    click on projectPage.Datasets.importDatasetButton
+    verify that newDatasetPage.ImportForm.datasetSubmitButton contains "Import Dataset"
+
+    And(s"the user imports a dataset from the datasetURL '$datasetURL'")
+    `setting its import url`(to = datasetURL.toString).importing(newDatasetPage)
+
+    And("the user imports the dataset")
+    click on newDatasetPage.ImportForm.datasetSubmitButton sleep (40 seconds)
+
+    val datasetPage = DatasetPage(datasetName)
+    When("the user navigates to the Datasets tab")
+    click on projectPage.Datasets.tab
+
+    Then("the user should see its newly imported dataset")
+    val datasetTitle = projectPage.Datasets.datasetTitle(datasetName)(_: WebDriver)
+    reload whenUserCannotSee datasetTitle
 
     datasetPage
   }
@@ -128,5 +160,15 @@ trait Datasets {
 
     def `changing its description`(to: String): Modification =
       Modification("changing its description", datasetPage => datasetPage.ModificationForm.datasetDescriptionField, to)
+  }
+
+  case class Import private (name: String, field: DatasetPage => WebElement, newValue: String) {
+    def importing(datasetPage: DatasetPage): Unit = field(datasetPage).enterValue(newValue)
+  }
+
+  object Import {
+
+    def `setting its import url`(to: String): Import =
+      Import("importing dataset with URL", datasetPage => datasetPage.ImportForm.datasetURLField, to)
   }
 }

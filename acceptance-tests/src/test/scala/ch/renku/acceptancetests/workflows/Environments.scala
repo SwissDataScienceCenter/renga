@@ -28,8 +28,7 @@ import scala.concurrent.duration._
 trait Environments {
   self: AcceptanceSpec =>
 
-  def `launch an environment`(implicit projectDetails: ProjectDetails): JupyterLabPage = {
-    implicit val projectPage: ProjectPage = ProjectPage()
+  def `launch an environment`(implicit projectDetails: ProjectDetails, projectPage: ProjectPage): JupyterLabPage = {
     When("user clicks on the Environments tab")
     click on projectPage.Environments.tab
     docsScreenshots.takeScreenshot()
@@ -64,6 +63,27 @@ trait Environments {
     click on projectPage.Environments.Running.stopButton sleep (10 seconds)
     Then("the session gets stopped and they can see the New Session link")
     verify userCanSee projectPage.Environments.newLink
+  }
+
+  def `launch an environment with Auto Fetch`(implicit
+      projectDetails: ProjectDetails,
+      projectPage:    ProjectPage
+  ): JupyterLabPage = {
+    When("user clicks on the Environments tab")
+    click on projectPage.Environments.tab
+
+    `click new & wait for image to build`
+
+    `turn Auto Fetch On`
+
+    `start environment & wait util it's not ready`
+
+    projectPage.Environments.Running.connectToJupyterLab
+
+    Then("a JupyterLab page is opened on a new tab")
+    val jupyterLabPage = JupyterLabPage()
+    verify browserSwitchedTo jupyterLabPage sleep (5 seconds)
+    jupyterLabPage
   }
 
   def `launch anonymous environment`(anonEnvConfig: AnonEnvConfig): Option[JupyterLabPage] = {
@@ -130,6 +150,11 @@ trait Environments {
     click on projectPage.Environments.newLink sleep (2 seconds)
     And("once the image is built")
     projectPage.Environments.verifyImageReady sleep (2 seconds)
+  }
+
+  private def `turn Auto Fetch On`(implicit projectPage: ProjectPage): Unit = {
+    And("then they turn on the Auto-fetch option")
+    click on projectPage.Environments.autoFetch
   }
 
   private def `start environment & wait util it's not ready`(implicit projectPage: ProjectPage): Unit =

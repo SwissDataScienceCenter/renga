@@ -18,6 +18,7 @@
 
 package ch.renku.acceptancetests.pages
 
+import ch.renku.acceptancetests.model.datasets.DatasetName
 import ch.renku.acceptancetests.model.projects.ProjectDetails._
 import ch.renku.acceptancetests.model.projects.{ProjectDetails, ProjectIdentifier}
 import ch.renku.acceptancetests.model.users.UserCredentials
@@ -258,10 +259,23 @@ class ProjectPage(projectSlug: String, namespace: String)
         .getOrElse(fail("Datasets title not found"))
     }
 
+
+    def datasetTitle(datasetName: DatasetName)(implicit webDriver: WebDriver): WebElement = eventually {
+      findAll(cssSelector("a"))
+        .find(_.text.startsWith(datasetName.value))
+        .getOrElse(fail("Datasets title not found"))
+    }
+
     def addADatasetButton(implicit webDriver: WebDriver): WebElement = eventually {
       findAll(cssSelector("a"))
         .find(element => element.text.contains("Add Dataset") || element.text.contains("Add a Dataset"))
         .getOrElse(fail("Add a Dataset button not found"))
+    }
+
+    def importDatasetButton(implicit webDriver: WebDriver): WebElement = eventually {
+      findAll(cssSelector("button"))
+        .find(element => element.text.contains("Import Dataset") || element.text.contains("Import a Dataset"))
+        .getOrElse(fail("Import Dataset button not found"))
     }
 
     object DatasetsList {
@@ -283,6 +297,11 @@ class ProjectPage(projectSlug: String, namespace: String)
     def newLink(implicit webDriver: WebDriver): WebElement =
       eventually {
         find(cssSelector(s"a[href='$path/environments/new']")) getOrElse fail("New environment link not found")
+      }(waitUpTo(1 minute), implicitly[source.Position])
+
+    def autoFetch(implicit webDriver: WebDriver): WebElement =
+      eventually {
+        find(cssSelector("input[id='option-lfs_auto_fetch']")) getOrElse fail("Auto-fetch option not found")
       }(waitUpTo(1 minute), implicitly[source.Position])
 
     def anonymousUnsupported(implicit webDriver: WebDriver): WebElement = eventually {

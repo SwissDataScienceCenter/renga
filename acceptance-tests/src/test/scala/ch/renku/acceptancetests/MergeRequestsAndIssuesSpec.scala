@@ -67,7 +67,7 @@ class MergeRequestsAndIssuesSpec
 
   private def `add change to the project`(branchName: String): Unit = {
     docsScreenshots.disable()
-    val jupyterLabPage = `launch an environment`(projectDetails)
+    val jupyterLabPage = `launch an environment`
     docsScreenshots.enable()
 
     When("the user clicks on the Terminal icon")
