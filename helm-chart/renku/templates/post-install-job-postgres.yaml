@@ -62,7 +62,7 @@ spec:
           - name: PGPASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{ template "postgresql.fullname" . }}
+                name: {{ template "postgresql.fullname" . }}-password
                 key: postgresql-password
       volumes:
         - name: scripts
@@ -77,7 +77,7 @@ spec:
         {{- if .Values.gitlab.enabled }}
         - name: gitlab-postgres
           secret:
-            secretName: {{ template "renku.fullname" . }}-gitlab-postgres
+            secretName: {{ template "postgresql.fullname" . }}-password
         {{- end}}
         - name: jupyterhub-postgres
           secret:

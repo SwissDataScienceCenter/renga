@@ -9,23 +9,14 @@ global:
   gitlab:
     ## Spawn a gitlab instance
     enabled: true
-    ## The URL path under which gitlab is running.
+    ## The URL path prefix under which gitlab is running.
     ## If GitLab is deployed along side with Renku, it should be equal to 'https://gitlab.'<global.renku.domain>
     url:
-    ## The URL path for the registry that hosts the docker images.
-    ## If GitLab is deployed along side with Renku, it should be equal to 'https://registry.gitlab.'<global.renku.domain>
     registryHost:
     ## The gitlab application ID and secret for Renku
     appSecret:
     appId: renku
-    ## Name of the postgres database to be used by Gitlab
-    postgresDatabase: gitlabhq_production
-    ## Postgres user for the gitlab database
-    postgresUser: gitlab
-    ## Postgres password for the gitlab database
-    postgresPassword:
-      value:
-      overwriteOnHelmUpgrade: false
+
   keycloak:
     ## Secret of the gitlab client app in keycloak. Only needed if gitlab is deployed as part of Renku
     ## and thus relies on keycloak for authentication. To change this value after deploying, first
@@ -54,10 +45,7 @@ global:
       value:
       overwriteOnHelmUpgrade: false
   gateway:
-    ## The client secret for the renku client application registered in keycloak.
     clientSecret: # use `uuidgen -r`
-    ## The client secret for the renku-cli client application registered in keycloak.
-    cliClientSecret: # use `uuidgen -r`
     ## The client ID for authentication against gitlab
     gitlabClientId: renku-ui
     ## The client secret for authentication against gitlab
@@ -102,28 +90,25 @@ global:
       value:
       overwriteOnHelmUpgrade: false
 
-  ## Global section of GitLab, not needed for external GitLab
+  ## Global section of GitLab, not needed if not signupEnabled
   edition: ce
   hosts:
-    ## Domain name for the deployed instance of Gitlab (can use the same as Renku)
+    ## Domain name for the deployed instance of Gitlab (could use the same as Renku)
     ## This will yield a GitLab deployment under gitlab.example.local
-    domain:
+    domain: example.local
     ## ExternalIP of where the above domain points to
     externalIP:
     https: true
-  psql:
-    host: '{{ template "renku.fullname" . }}-postgres'
-    password:
-      ## secret: '{{ template "renku.fullname" . }}-postgresql-password'
-      key: gitlab-postgres-password
-  ingress:
-    annotations:
-      kubernetes.io/ingress.class: nginx
-      cert-manager.io/cluster-issuer: letsencrypt-production
-    configureCertmanager: false
-    enabled: true
-    tls:
-      enabled: true
+  ## Uses conventional settings for ingress
+  ## Find below an example of values
+  # ingress:
+  #  annotations:
+  #    kubernetes.io/ingress.class: nginx
+  #    cert-manager.io/cluster-issuer: letsencrypt-production
+  #  configureCertmanager: false
+  #  enabled: true
+  #  tls:
+  #    enabled: true
   time_zone: CET
   appConfig:
     # OmniAuth Settings for using Renku's Keycloak as an auth provider
@@ -131,7 +116,6 @@ global:
     # Openid connect reference
     # https://docs.gitlab.com/ee/administration/auth/oidc.html
     omniauth:
-      ## enabled: false
       enabled: true
       autoSignInWithProvider: openid_connect
       # User accounts will be created automatically when authentication was successful.
@@ -140,20 +124,19 @@ global:
       providers:
        - secret: renku-oauth-provider
          key: provider
-  ##  lfs:
-    ##  enabled: true
-    ##  proxy_download: false
-    ##  bucket: renku-lfs-objects
-    ##  connection:
-    ##    secret: gitlab-s3-buckets
-    ##    key: lfs-s3-bucket
-    ##    secretContent:
-    ##      provider: 'AWS'
-    ##      endpoint: 'https://<fill-endpoint>'
-    ##      aws_access_key_id: '<fill-key-id>'
-    ##      aws_secret_access_key: '<fill-access-key>'
-    ##      aws_signature_version: 2
-    ##      path_style: true
+    ## LFS objects settings
+    ## Used to store git-lfs objects externally
+    ## Note: bucket must exist before use, GitLab won't do it
+    ## A secret containing the connection details should be created in the namespace prior to deployment
+    ## Follows: https://docs.gitlab.com/ce/workflow/lfs/lfs_administration.html#storing-lfs-objects-in-remote-object-storage
+    # lfs:
+    #  enabled: true
+    #  proxy_download: false
+    #  bucket: lfs-objects
+    #  connection:
+    #    secret: gitlab-lfs-connection
+    #    key: lfs-connection
+
 
 ## Ingress configuration
 ## See: https://kubernetes.io/docs/concepts/services-networking/ingress/
@@ -248,7 +231,7 @@ keycloak:
 
   extraInitContainers: |
     - name: theme-provider
-      image: renku/keycloak-theme:2.0.0
+      image: renku/keycloak-theme:v1.2
       imagePullPolicy: IfNotPresent
       command:
         - sh
@@ -275,7 +258,6 @@ keycloak:
 # For production deployments check out
 # https://github.com/bitnami/charts/blob/master/bitnami/postgresql/values-production.yaml
 postgresql:
-  enabled: true
 
   ## We use the defaults here. Note that these basic configs could also be set as
   ## global values such that sub-charts can access them too.
@@ -293,7 +275,7 @@ postgresql:
 
   image:
     repository: bitnami/postgresql
-    tag: 11.11.0
+    tag: 9.6
 
   persistence:
     ## We use the defaults here, but they will probably be modified for most deployments.
@@ -312,16 +294,26 @@ postgresql:
 
 ## Gitlab configuration
 gitlab:
-  ## Spawn a gitlab instance
-  enabled: true
-  postgresql:
-    install: false
   certmanager:
     install: false
   nginx-ingress:
     enabled: false
   prometheus:
     install: false
+  gitlab:
+    webservice:
+      ingress:
+        tls:
+          secretName: gitlab-example-local-tls
+  registry:
+    ingress:
+      tls:
+        secretName: registry-example-local-tls
+  minio:
+    ingress:
+      tls:
+        secretName: minio-example-local-tls
+
 
 ## Configuration for the UI service
 ui:
@@ -331,17 +323,11 @@ ui:
     custom: true
     repositories:
       - url: https://github.com/SwissDataScienceCenter/renku-project-template
-        ref: 0.1.21
+        ref: 0.1.19
         name: Renku
       - url: https://github.com/SwissDataScienceCenter/contributed-project-templates
-        ref: 0.2.0
+        ref: 0.1.0
         name: Community
-
-  canary:
-    enabled: true
-    image:
-      repository: renku/renku-ui
-      tag: "1.0.0-beta2"
 
   #  welcomePage:
   #    text: "## Some markdown text here!"
@@ -482,7 +468,7 @@ notebooks:
     auth:
     #   type: gitlab
     #   gitlab:
-    #     clientId: renku
+    #     clientId: jupyterhub
     #     clientSecret: dummy-secret
     #     callbackUrl:  # Null value forces the default callback url
 
@@ -594,7 +580,3 @@ core:
 
     ## Default clone depth
     # projectCloneDepth: 1
-
-## Configuration for the Swagger-UI available at <renku-domain>/swagger
-swagger:
-  enabled: true

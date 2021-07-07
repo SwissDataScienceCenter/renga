@@ -3,4 +3,4 @@ appVersion: '1.0'
 description: A Helm chart for the Renku platform
 name: renku
 icon: https://github.com/SwissDataScienceCenter/renku-sphinx-theme/raw/master/renku_sphinx_theme/static/favicon.png
-version: 0.8.1
+version: 0.9.0

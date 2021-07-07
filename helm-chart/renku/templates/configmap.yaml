@@ -9,7 +9,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  {{- if and .Values.gitlab.enabled }}
+  {{- if .Values.global.gitlab.enabled }}
   init-gitlab.sh: |-
     #!/usr/bin/env bash
     set -ex
@@ -18,26 +18,21 @@ data:
     apt-get update -y
     apt-get install -y curl jq
 
-    GITLAB_SERVICE_URL="http://{{ template "gitlab.fullname" . }}{{ .Values.global.gitlab.urlPrefix }}"
-    GITLAB_URL="{{ .Values.ui.gitlabUrl }}"
+    GITLAB_URL="{{ .Values.global.gitlab.url }}"
 
-    until sleep 1; curl -f -s --connect-timeout 5 ${GITLAB_SERVICE_URL}/help; do
-        echo waiting for gitlab
+    until sleep 1; curl -f -s --connect-timeout 5 ${GITLAB_URL}/help; do
+        echo waiting for gitlab to be up
     done
 
     psql -v ON_ERROR_STOP=1 <<-EOSQL
-        DELETE FROM oauth_applications WHERE uid='jupyterhub';
+        DELETE FROM oauth_applications WHERE uid='{{ .Values.global.gitlab.appId }}';
         INSERT INTO oauth_applications (name, uid, scopes, redirect_uri, secret, trusted)
-        VALUES ('jupyterhub', 'jupyterhub', 'api read_user', '{{ template "http" . }}://{{ .Values.global.renku.domain }}{{ .Values.notebooks.jupyterhub.hub.baseUrl }}hub/oauth_callback {{ template "http" . }}://{{ .Values.global.renku.domain }}/jupyterhub/hub/api/oauth2/authorize', '${JUPYTERHUB_AUTH_GITLAB_CLIENT_SECRET}', 'true');
-
-        DELETE FROM oauth_applications WHERE uid='{{ .Values.global.gateway.gitlabClientId }}';
-        INSERT INTO oauth_applications (name, uid, scopes, redirect_uri, secret, trusted)
-        VALUES ('renku-ui', '{{ .Values.global.gateway.gitlabClientId }}', 'api read_user read_repository read_registry openid', '{{ template "http" . }}://{{ .Values.global.renku.domain }}/login/redirect/gitlab {{ template "http" . }}://{{ .Values.global.renku.domain }}/api/auth/gitlab/token', '${GATEWAY_GITLAB_CLIENT_SECRET}', 'true');
+        VALUES ('renku', '{{ .Values.global.gitlab.appId }}', 'api read_user read_repository read_registry openid', '{{ template "http" . }}://{{ .Values.global.renku.domain }}/login/redirect/gitlab {{ template "http" . }}://{{ .Values.global.renku.domain }}/api/auth/gitlab/token {{ template "http" . }}://{{ .Values.global.renku.domain }}{{ .Values.notebooks.jupyterhub.hub.baseUrl }}hub/oauth_callback {{ template "http" . }}://{{ .Values.global.renku.domain }}/jupyterhub/hub/api/oauth2/authorize', '${RENKU_AUTH_GITLAB_CLIENT_SECRET}', 'true');
     EOSQL
 
     # configure the logout redirect
     # curl -f -is -X PUT -H "Private-token: ${GITLAB_SUDO_TOKEN}" \
-    #   ${GITLAB_SERVICE_URL}/api/v4/application/settings?after_sign_out_path={{ template "http" . }}://{{ .Values.global.renku.domain }}/auth/realms/Renku/protocol/openid-connect/logout?redirect_uri={{ template "http" . }}://{{ .Values.global.renku.domain }}/api/auth/logout%3Fgitlab_logout=1
+    #   ${GITLAB_URL}/api/v4/application/settings?after_sign_out_path={{ template "http" . }}://{{ .Values.global.renku.domain }}/auth/realms/Renku/protocol/openid-connect/logout?redirect_uri={{ template "http" . }}://{{ .Values.global.renku.domain }}/api/auth/logout%3Fgitlab_logout=1
   {{- end }}
   # Init scripts that populate /docker-entrypoint-initdb.d
 
@@ -92,7 +87,7 @@ data:
     EOSQL
   {{- end }}
 
-  {{- if .Values.gitlab.enabled }}
+  {{- if .Values.global.gitlab.enabled }}
   init-gitlab-db.sh: |-
       #!/bin/bash
       set -x

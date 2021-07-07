@@ -56,12 +56,6 @@ spec:
           serviceName: {{ $keycloakFullname }}-http
           servicePort: {{ $keycloakServicePort }}
       {{- end }}
-      {{- if $gitlabEnabled }}
-      - path: /gitlab
-        backend:
-          serviceName: {{ $gitlabFullname }}
-          servicePort: {{ $gitlabServicePort }}
-      {{- end }}
       - path: /repos
         backend:
           serviceName: {{ $gatewayFullname }}
