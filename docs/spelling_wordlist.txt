@@ -43,6 +43,7 @@ dotfiles
 dropdown
 extraEnv
 extraEnvFrom
+falsy
 filesystem
 FilterFlights
 findable
@@ -155,6 +156,7 @@ Tensorflow
 timestamp
 tinkerpop
 toolchain
+truthy
 txt
 typesystem
 Ubuntu

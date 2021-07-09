@@ -284,9 +284,42 @@ repository. Each of them requires an entry with the following parameters:
   `Jinja template engine <https://palletsprojects.com/p/jinja/>`_ in both
   file content and filenames. You can therefore ask users for specific values
   for any number of variables. The syntax is
-  ``<variable_name>: <variable_description>``, where the name will be used as
-  the variable name provided to the engine and the description will be
-  presented to the user to explain the variable's intended use.
+  ``<variable_name>: <variable_specification>``, where the name will be used as
+  the variable name provided to the engine and ``variable_specification`` is a
+  dictionary defining the variable. A variables entry looks like
+
+  .. code-block:: yaml
+
+      variables:
+        name:
+          description: description of the variable
+          type: string
+        bool_var:
+          description: description of the variable
+          type: boolean
+          default_value: True
+        enum_var:
+          description: description of the variable
+          type: enum
+          enum:
+            - "yes"
+            - "no"
+            - maybe
+            - ask again
+          default_value: ask again
+        number_var:
+          description: description of the variable
+          type: number
+
+  where specifying a ``description`` is mandatory. ``default_value``
+  determines the value that is used if a user doesn't provide a value.
+  ``type`` determines the type of value that this variable expects, which can
+  be one of ``string``, ``boolean``, ``number`` or ``enum``.
+  ``boolean`` accepts most truthy/falsy values, such as ``true``, ``false``,
+  ``0``, ``1``, ``"0"``, ``"1"``, ``"True"``, ``"False"``.
+  ``number`` accepts numeric inputs like integers and floats.
+  ``enum`` is a special type that restricts the accepted values to those
+  set in the ``enum:`` list of values.
 * ``allow_template_update``: When set to ``true``, indicates that this
   template supports being updated. When the template gets updated, projects
   created from it will get updated with the new template files. Defaults to
