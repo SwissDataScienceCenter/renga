@@ -64,6 +64,16 @@ in the `values changelog file <https://github.com/SwissDataScienceCenter/renku/b
 For upgrades that require some steps other than modifying the values files to be
 executed, we add some instructions here.
 
+Upgrading to 0.8.x
+******************
+We have added add a new section called `serverDefaults` to the `values.yaml` for the notebook service. 
+The information in this new `serverDefaults` section is used for any server options that are not specified 
+explicitly when launching a session. This allows a renku admin to leave out a specific option from the 
+`serverOptions` section and apply the value specified in the `serverDefaults` section for all sessions. 
+Please note that the default values specified in the  `serverDefaults` should be available as one of the options 
+in `serverOptions` - if the specific option appears in both sections. The defaults in the `serverOptions` 
+section now only refer to the default selection that is shown to the user in the UI.
+
 Upgrading to 0.8.0
 ******************
 We bump the PostgreSQL version from 9.6 to 11 and the GitLab major version from 11 to 13.

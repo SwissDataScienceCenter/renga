@@ -474,6 +474,15 @@ ui:
 
 # ## Configuration for the notebooks service
 notebooks:
+  ## serverDefaults specifies defaults used when server options parameters
+  ## are not specified in the post request to renku notebooks to start a session.
+  # serverDefaults:
+  #   defaultUrl: /lab
+  #   cpu_request: 0.5
+  #   mem_request: 1G
+  #   disk_request: 1G
+  #   gpu_request: 0
+  #   lfs_auto_fetch: false
   ## serverOptions allow for modifications to the notebook pod resource requests and the UI rendering
   # serverOptions:
   #   defaultUrl:
