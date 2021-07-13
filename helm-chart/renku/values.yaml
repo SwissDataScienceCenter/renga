@@ -472,6 +472,23 @@ ui:
     ## is available under https://5bcn9bqff4qt.statuspage.io/api/v2/summary.json, so
     # id: 5bcn9bqff4qt
 
+  ## Home settings allow configuration of the home page shown on RenkuLab when the user
+  ## is not logged in.
+  # homepage:
+  #   custom:
+  #     enabled: true
+  #     main:
+  #       # Custom homepage content as single string markdown
+  #       contentMd: |
+  #         ## RenkuLab @ Yoyodyne
+  #         Welcome to the **Yoyodyne** RenkuLab instance!
+  #       backgroundImage:
+  #         url: https://eoimages.gsfc.nasa.gov/images/imagerecords/79000/79803/earth_night_rotate_lrg.jpg
+  #   tutorialLink: https://renku.readthedocs.io/en/latest/tutorials/01_firststeps.html
+  #   projects:
+  #     - projectPath: renku-tutorials/e-rum-2020
+  #     - projectPath: covid-19/covid-19-forecast
+
 # ## Configuration for the notebooks service
 notebooks:
   ## serverOptions allow for modifications to the notebook pod resource requests and the UI rendering

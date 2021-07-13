@@ -24,7 +24,7 @@ import java.lang.System.getProperty
 
 case class AnonEnvConfig(projectId: ProjectIdentifier, isAvailable: Boolean = false)
 
-/** Configuration for the anonymous environment
+/** Configuration for the anonymous sessions
   */
 trait AnonEnv extends AcceptanceSpecData {
   self: RenkuApi =>

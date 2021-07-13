@@ -18,6 +18,8 @@
 
 package ch.renku.acceptancetests.workflows
 
+import org.openqa.selenium.interactions.Actions
+
 import ch.renku.acceptancetests.model.projects.ProjectIdentifier
 import ch.renku.acceptancetests.pages._
 import ch.renku.acceptancetests.tooling.{AcceptanceSpec, AnonEnvConfig}
@@ -27,19 +29,19 @@ import scala.concurrent.duration._
 trait Environments {
   self: AcceptanceSpec =>
 
-  def `launch an environment`(implicit projectPage: ProjectPage): JupyterLabPage = {
+  def `launch a session`(implicit projectPage: ProjectPage): JupyterLabPage = {
 
-    When("user clicks on the Environments tab")
-    click on projectPage.Environments.tab
+    When("user clicks on the sessions tab")
+    click on projectPage.Sessions.tab
     docsScreenshots.takeScreenshot()
 
     `click new & wait for image to build`
     docsScreenshots.takeScreenshot()
 
-    `start environment & wait util it's not ready`
+    `start session and wait until it is ready`
     docsScreenshots.takeScreenshot()
 
-    projectPage.Environments.Running.connectToJupyterLab
+    projectPage.Sessions.Running.connectToJupyterLab
 
     Then("a JupyterLab page is opened on a new tab")
     val jupyterLabPage = JupyterLabPage()
@@ -47,54 +49,55 @@ trait Environments {
     jupyterLabPage
   }
 
-  def `stop environment`(implicit projectPage: ProjectPage): Unit =
-    stopEnvironmentOnProjectPage(projectPage)
+  def `stop session`(implicit projectPage: ProjectPage): Unit =
+    stopSessionOnProjectPage(projectPage)
 
-  def `stop environment`(projectId: ProjectIdentifier): Unit =
-    stopEnvironmentOnProjectPage(ProjectPage(projectId))
+  def `stop session`(projectId: ProjectIdentifier): Unit =
+    stopSessionOnProjectPage(ProjectPage(projectId))
 
-  private def stopEnvironmentOnProjectPage(projectPage: ProjectPage): Unit = {
+  private def stopSessionOnProjectPage(projectPage: ProjectPage): Unit = {
     When("the user switches back to the Renku tab")
     verify browserSwitchedTo projectPage
-    And("the Environments tab")
-    click on projectPage.Environments.tab
-    And("they turn off the interactive session they started before")
-    click on projectPage.Environments.Running.connectDotButton
-    click on projectPage.Environments.Running.stopButton sleep (10 seconds)
+    And("the sessions tab")
+    click on projectPage.Sessions.tab sleep (10 seconds)
+    And("they turn off the session they started before")
+    click on projectPage.Sessions.Running.sessionDropdownMenu sleep (2 seconds)
+    And("click on stop button")
+    click on projectPage.Sessions.Running.stopButton sleep (10 seconds)
     Then("the session gets stopped and they can see the New Session link")
-    verify userCanSee projectPage.Environments.newLink
+    verify userCanSee projectPage.Sessions.newLink
   }
 
-  def `launch anonymous environment`(anonEnvConfig: AnonEnvConfig): Option[JupyterLabPage] = {
+  def `launch anonymous session`(anonEnvConfig: AnonEnvConfig): Option[JupyterLabPage] = {
     val projectId   = anonEnvConfig.projectId
     val projectPage = ProjectPage(projectId)
     go to projectPage
     When("user is logged out")
     And(s"goes to $projectId")
-    And("clicks on the Environments tab to launch an anonymous notebook")
-    click on projectPage.Environments.tab
+    And("clicks on the sessions tab to launch an anonymous notebook")
+    click on projectPage.Sessions.tab
     if (anonEnvConfig.isAvailable) {
-      And("anonymous environments are supported")
-      Some(`anonymous environment supported`(projectPage, projectId))
+      And("anonymous sessions are supported")
+      Some(`anonymous session supported`(projectPage, projectId))
     } else {
-      And("anonymous environments are not supported")
-      `anonymous environment unsupported`(projectPage)
+      And("anonymous sessions are not supported")
+      `anonymous session unsupported`(projectPage)
       None
     }
   }
 
-  def `launch unprivileged environment`(implicit anonEnvConfig: AnonEnvConfig): JupyterLabPage = {
+  def `launch unprivileged session`(implicit anonEnvConfig: AnonEnvConfig): JupyterLabPage = {
     val projectId = anonEnvConfig.projectId
     implicit val projectPage: ProjectPage = ProjectPage(projectId)
     go to projectPage
     When(s"user goes to $projectId")
-    And("clicks on the Environments tab to launch an unprivileged notebook")
-    click on projectPage.Environments.tab
+    And("clicks on the Sessions tab to launch an unprivileged session")
+    click on projectPage.Sessions.tab
 
     `click new & wait for image to build`
-    `start environment & wait util it's not ready`
+    `start session and wait until it is ready`
 
-    projectPage.Environments.Running.connectToJupyterLab
+    projectPage.Sessions.Running.connectToJupyterLab
 
     Then("a JupyterLab page is opened on a new tab")
     val jupyterLabPage = JupyterLabPage(projectId)
@@ -103,19 +106,19 @@ trait Environments {
     jupyterLabPage
   }
 
-  private def `anonymous environment unsupported`(projectPage: ProjectPage): Option[JupyterLabPage] = {
+  private def `anonymous session unsupported`(projectPage: ProjectPage): Option[JupyterLabPage] = {
     Then("they should see a message")
-    projectPage.Environments.anonymousUnsupported
+    projectPage.Sessions.anonymousUnsupported
     None
   }
 
-  private def `anonymous environment supported`(pp: ProjectPage, projectId: ProjectIdentifier): JupyterLabPage = {
+  private def `anonymous session supported`(pp: ProjectPage, projectId: ProjectIdentifier): JupyterLabPage = {
     implicit val projectPage: ProjectPage = pp
     sleep(5 seconds)
     `click new & wait for image to build`
-    `start environment & wait util it's not ready`
+    `start session and wait until it is ready`
 
-    projectPage.Environments.Running.connectToAnonymousJupyterLab
+    projectPage.Sessions.Running.connectToAnonymousJupyterLab
 
     Then("a JupyterLab page is opened on a new tab")
     val jupyterLabPage = JupyterLabPage(projectId)
@@ -126,34 +129,42 @@ trait Environments {
 
   private def `click new & wait for image to build`(implicit projectPage: ProjectPage): Unit = {
     And("then they click on the New link")
-    click on projectPage.Environments.newLink sleep (2 seconds)
+    click on projectPage.Sessions.newLink sleep (2 seconds)
     And("once the image is built")
-    projectPage.Environments.verifyImageReady sleep (2 seconds)
+    projectPage.Sessions.verifyImageReady sleep (2 seconds)
   }
 
-  private def `start environment & wait util it's not ready`(implicit projectPage: ProjectPage): Unit = {
-    projectPage.Environments.verifyImageReady sleep (2 seconds)
+  private def `start session and wait until it is ready`(implicit projectPage: ProjectPage): Unit = {
+    projectPage.Sessions.verifyImageReady sleep (2 seconds)
+    try `try to click the session button`
+    catch {
+      case e: org.openqa.selenium.ElementClickInterceptedException => `try to click the session button`
+    }
+  }
 
-    projectPage.Environments.maybeStartEnvironmentButton match {
+  private def `try to click the session button`(implicit projectPage: ProjectPage): Unit =
+    projectPage.Sessions.maybeStartSessionButton match {
       case None =>
-        projectPage.Environments.connectToJupyterLabLink.isDisplayed shouldBe true
+        projectPage.Sessions.connectToJupyterLabLink.isDisplayed shouldBe true
       case Some(startEnvButton) =>
-        And("the user clicks on the Start Environment button")
+        And("the user clicks on the Start session button")
+        new Actions(webDriver)
+          .moveToElement(startEnvButton)
+          .perform();
         click on startEnvButton sleep (5 seconds)
 
         `try few times before giving up` { _ =>
-          Then("they should be redirected to the Environments -> Running tab")
-          verify userCanSee projectPage.Environments.Running.title
+          Then("they should be redirected to the Sessions -> Running tab")
+          verify userCanSee projectPage.Sessions.Running.title
         }
 
         `try few times before giving up` { _ =>
-          When("the environment is ready")
-          projectPage.Environments.Running.verifyEnvironmentReady
+          When("the session is ready")
+          projectPage.Sessions.Running.verifySessionReady
         }
 
         And("the user clicks on the Connect button in the table")
         // Sleep a little while after clicking to give the server a chance to come up
-        click on projectPage.Environments.Running.title sleep (30 seconds)
+        click on projectPage.Sessions.Running.title sleep (30 seconds)
     }
-  }
 }

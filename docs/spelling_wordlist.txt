@@ -8,6 +8,7 @@ autosave
 autosaved
 backend
 backends
+backgroundImage
 balancer
 Bergstrom
 Bioconductor
@@ -22,6 +23,7 @@ circumventable
 CLI
 conda
 config
+contentMd
 cookiecutter
 Cookiecutter
 coopetition
@@ -155,6 +157,7 @@ Tensorflow
 timestamp
 tinkerpop
 toolchain
+tutorialLink
 txt
 typesystem
 Ubuntu

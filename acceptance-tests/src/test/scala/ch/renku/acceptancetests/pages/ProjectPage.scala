@@ -75,13 +75,12 @@ class ProjectPage(val projectSlug: String, val namespace: String)
     }
 
     def projectDescription(implicit webDriver: WebDriver): WebElement = eventually {
-      find(cssSelector("div.row span.lead")) getOrElse fail("Overview -> Project Description not found")
+      find(cssSelector(".rk-project-description")) getOrElse fail("Overview -> Project Description not found")
     }
 
-    def descriptionButton(implicit webDriver: WebDriver): WebElement = eventually {
-      find(cssSelector(s"div.row ul.nav.flex-column li.nav-item a[href='$path']:last-of-type"))
-        .find(_.text == "Description")
-        .getOrElse(fail("Overview -> Description button not found"))
+    def overviewGeneralButton(implicit webDriver: WebDriver): WebElement = eventually {
+      find(cssSelector(s"#nav-overview-general"))
+        .getOrElse(fail("Overview -> General button not found"))
     }
 
     object Description {
@@ -103,10 +102,14 @@ class ProjectPage(val projectSlug: String, val namespace: String)
         find(cssSelector(s"a[href='$path/collaboration/mergerequests']")) getOrElse fail("Merge Requests tab not found")
       }
 
-      def noMergeRequests(implicit webDriver: WebDriver): WebElement = eventually {
-        findAll(cssSelector("div.row div"))
-          .find(_.text == "No merge requests to display.")
-          .getOrElse(fail("No merge requests info not found"))
+      def gitLabMrLink(implicit webDriver: WebDriver): WebElement = eventually {
+        find(cssSelector(s"a[href*='/gitlab/$namespace/$projectSlug/-/merge_requests']"))
+          .getOrElse(fail("GitLab MR link not found"))
+      }
+
+      def collaborationIframe(implicit webDriver: WebDriver): WebElement = eventually {
+        find(cssSelector("#collaboration-iframe"))
+          .getOrElse(fail("MR iFrame not found"))
       }
 
       def futureMergeRequestBanner(implicit webDriver: WebDriver): WebElement = eventually {
@@ -120,14 +123,6 @@ class ProjectPage(val projectSlug: String, val namespace: String)
           "Create Merge Request button not found"
         )
       }
-
-      def mrTitleElements(implicit webDriver: WebDriver): List[WebBrowser.Element] = eventually {
-        findAll(cssSelector("span.issue-title a")) toList
-      }
-
-      def mergeRequestsTitles(implicit webDriver: WebDriver): List[String] =
-        mrTitleElements.map(_.text)
-
     }
 
     object Issues {
@@ -136,23 +131,14 @@ class ProjectPage(val projectSlug: String, val namespace: String)
         find(cssSelector(s"a[href='$path/collaboration/issues']")) getOrElse fail("Issues tab not found")
       }
 
-      def newIssueLink(implicit webDriver: WebDriver): WebElement = eventually {
-        findAll(cssSelector(s"a[href='$path/collaboration/issues/issue_new']"))
-          .find(_.text == "New Issue")
-          .getOrElse(fail("New Issue button not found"))
+      def gitLabIssuesLink(implicit webDriver: WebDriver): WebElement = eventually {
+        find(cssSelector(s"a[href*='/gitlab/$namespace/$projectSlug/-/issues']"))
+          .getOrElse(fail("GitLab issue link not found"))
       }
 
-      def issueTitleElements(implicit webDriver: WebDriver): List[WebBrowser.Element] = eventually {
-        findAll(cssSelector("span.issue-title a")) toList
-      }
-
-      def issueTitles(implicit webDriver: WebDriver): List[String] =
-        issueTitleElements.map(_.text)
-
-      def noIssues(implicit webDriver: WebDriver): WebElement = eventually {
-        findAll(cssSelector("div.row div"))
-          .find(_.text == "No issues to display.")
-          .getOrElse(fail("No issues info not found"))
+      def collaborationIframe(implicit webDriver: WebDriver): WebElement = eventually {
+        find(cssSelector("#collaboration-iframe"))
+          .getOrElse(fail("Issues iFrame not found"))
       }
 
       object NewIssue {
@@ -161,7 +147,7 @@ class ProjectPage(val projectSlug: String, val namespace: String)
         }
 
         def markdownSwitch(implicit webDriver: WebDriver): WebElement = eventually {
-          find(cssSelector("div.float-right.custom-switch.custom-control > label")) getOrElse
+          find(cssSelector("#CKEditorSwitch")) getOrElse
             fail("Markdown switch not found")
         }
 
@@ -170,7 +156,7 @@ class ProjectPage(val projectSlug: String, val namespace: String)
         }
 
         def createIssueButton(implicit webDriver: WebDriver): WebElement = eventually {
-          findAll(cssSelector("button[type='submit']")).find(_.text == "Create Issue") getOrElse fail(
+          findAll(cssSelector("button[type='submit']")).find(_.text.contains("Create Issue")) getOrElse fail(
             "Create Issue button not found"
           )
         }
@@ -199,7 +185,7 @@ class ProjectPage(val projectSlug: String, val namespace: String)
     object Info {
 
       def heading(implicit webDriver: WebDriver): WebElement = eventually {
-        find(cssSelector("div.card div.align-items-baseline.card-header")) getOrElse fail(
+        find(cssSelector("#file-card-header")) getOrElse fail(
           "Files -> Info heading not found"
         )
       }
@@ -264,82 +250,90 @@ class ProjectPage(val projectSlug: String, val namespace: String)
     object DatasetsList {
       def link(to: DatasetPage)(implicit webDriver: WebDriver): WebElement =
         eventually {
-          find(cssSelector(s"div.project-list-row a[href='${to.path}' i]"))
-            .orElse(find(cssSelector(s"div.project-list-row a[href='${to.path}/' i]")))
+          find(cssSelector(s"a[href='${to.path}/'] > div > div.title"))
             .getOrElse(fail(s"Dataset '${to.path}' not found"))
-        }(waitUpTo(120 seconds), implicitly[Retrying[WebBrowser.Element]], implicitly[source.Position])
+        }(waitUpTo(60 seconds), implicitly[Retrying[WebBrowser.Element]], implicitly[source.Position])
     }
   }
 
-  object Environments {
+  object Sessions {
 
     def tab(implicit webDriver: WebDriver): WebElement = eventually {
-      find(cssSelector(s"a[href='$path/environments']")) getOrElse fail("Environments tab not found")
+      find(cssSelector(s"a[href='$path/sessions']")) getOrElse fail("Sessions tab not found")
     }
 
     def newLink(implicit webDriver: WebDriver): WebElement = eventually {
-      find(cssSelector(s"a[href='$path/environments/new']")) getOrElse fail("New environment link not found")
+      findAll(cssSelector(s"div.d-flex > div > a[href='$path/sessions/new']"))
+        .find(_.text == "New session")
+        .getOrElse(fail("New session link not found"))
     }(waitUpTo(1 minute), implicitly[Retrying[WebBrowser.Element]], implicitly[source.Position])
 
     def anonymousUnsupported(implicit webDriver: WebDriver): WebElement = eventually {
       findAll(cssSelector("div > div > div > div > p"))
         .find(
-          _.text == "This Renkulab deployment doesn't allow unauthenticated users to start Interactive Environments."
+          _.text == "This Renkulab deployment doesn't allow unauthenticated users to start sessions."
         )
-        .getOrElse(fail("Unsupported environment notification not found"))
+        .getOrElse(fail("Unsupported session notification not found"))
     }
 
-    def maybeStartEnvironmentButton(implicit webDriver: WebDriver): Option[WebElement] = eventually {
-      findAll(cssSelector("div > form > button.btn.btn-primary")).find(_.text == "Start environment")
+    def maybeStartSessionButton(implicit webDriver: WebDriver): Option[WebElement] = eventually {
+      findAll(cssSelector("div > form > button.btn.btn-primary")).find(_.text == "Start session")
     }
 
     def connectToJupyterLabLink(implicit webDriver: WebDriver): WebElement = eventually {
       findAll(cssSelector("a[href*='jupyterhub/user/']"))
-        .find(_.text == "Connect")
-        .getOrElse(fail("Connect to environment button not found"))
+        .find(_.text.endsWith("Open in new tab"))
+        .getOrElse(fail("Connect to session button not found"))
     }
 
     def verifyImageReady(implicit webDriver: WebDriver): Unit = eventually {
       maybeImageReadyBadge getOrElse {
-        sleep(1 second)
+        sleep(5 second)
         webDriver.navigate.refresh()
         fail("Image not ready")
       }
     }(waitUpTo(10 minutes, interval = 3 seconds), implicitly[Retrying[WebBrowser.Element]], implicitly[source.Position])
 
     private def maybeImageReadyBadge(implicit webDriver: WebDriver): Option[WebBrowser.Element] =
-      find(cssSelector(".badge.badge-success"))
+      find(cssSelector(".badge.bg-success"))
 
     object Running {
 
       def title(implicit webDriver: WebDriver): WebElement = eventually {
         find(cssSelector("div.row div.col h3"))
           .map { element =>
-            element.text shouldBe "Interactive Environments"
+            element.text shouldBe "Sessions"
             element
           }
-          .getOrElse(fail("Environments -> Running title not found"))
+          .getOrElse(fail("Sessions -> Running: title not found"))
       }
 
       def connectToJupyterLab(implicit webDriver: WebDriver, spec: AcceptanceSpec): Unit =
-        connectToJupyterLab(s"a[href*='/jupyterhub/user/']")
+        connectToJupyterLab(s"a[href*='/jupyterhub/user/']", s"div.sessionsButton > button")
 
       def connectToAnonymousJupyterLab(implicit webDriver: WebDriver, spec: AcceptanceSpec): Unit =
-        connectToJupyterLab(s"table a[href*='/jupyterhub-tmp/user/']")
+        connectToJupyterLab(s"a[href*='/jupyterhub-tmp/user/']", s"div.sessionsButton > button")
 
       def connectButton(buttonSelector: String)(implicit webDriver: WebDriver): WebElement = eventually {
         find(
           cssSelector(buttonSelector)
         ) getOrElse fail(
-          "First row Interactive Environment Connect button not found"
+          "First row session Connect button not found"
         )
       }
 
       private def connectToJupyterLab(
-          buttonSelector:   String
+          buttonSelector:   String,
+          buttonDropdown:   String
       )(implicit webDriver: WebDriver, spec: AcceptanceSpec): Unit = eventually {
         import spec.{And, Then}
-        And("tries to connect to JupyterLab")
+        And("tries to connect to JupyterLab " + buttonSelector)
+        sleep(2 seconds)
+        // check the dropdown availability even when provided to prevent occasional failures
+        if (!buttonDropdown.isEmpty() && (findAll(cssSelector(buttonDropdown)) toList).size > 0) {
+          connectButton(buttonDropdown).click()
+          sleep(2 seconds)
+        }
         connectButton(buttonSelector).click()
         sleep(2 seconds)
 
@@ -358,22 +352,21 @@ class ProjectPage(val projectSlug: String, val namespace: String)
         }
       }
 
-      def connectDotButton(implicit webDriver: WebDriver): WebElement = eventually {
-        findAll(cssSelector("button.btn.btn-primary svg[data-icon='ellipsis-v']"))
-          .find(_.findElement(By.xpath("./../..")).getText.equals("Connect"))
-          .getOrElse(fail("First row Interactive Environment ... button not found"))
-          .parent
+      def sessionDropdownMenu(implicit webDriver: WebDriver): WebElement = eventually {
+        findAll(cssSelector("div.sessionsButton > button"))
+          .find(_.text.isEmpty())
+          .getOrElse(fail("Session dropdown button not found"))
       }
 
       def stopButton(implicit webDriver: WebDriver): WebElement = eventually {
         find(cssSelector("button.dropdown-item svg[data-icon='stop-circle']"))
-          .getOrElse(fail("First row Interactive Environment Stop button not found"))
+          .getOrElse(fail("Session stop button not found in the dropdown"))
           .parent
       }
 
-      def verifyEnvironmentReady(implicit webDriver: WebDriver): Unit = eventually {
-        find(cssSelector(".text-nowrap.p-1.badge.badge-success"))
-          .getOrElse(fail("Interactive environment is not ready"))
+      def verifySessionReady(implicit webDriver: WebDriver): Unit = eventually {
+        find(cssSelector(".text-nowrap.p-1.badge.bg-success"))
+          .getOrElse(fail("Session is not ready"))
       }
     }
   }
@@ -403,7 +396,7 @@ class ProjectPage(val projectSlug: String, val namespace: String)
     }
 
     def updateButton(implicit webDriver: WebDriver): WebElement = eventually {
-      find(cssSelector("div.form-group + button.btn.btn-primary")) getOrElse fail(
+      find(cssSelector(".updateProjectSettings")) getOrElse fail(
         "Update button not found"
       )
     }

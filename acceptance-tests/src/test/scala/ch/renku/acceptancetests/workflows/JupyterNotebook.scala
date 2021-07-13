@@ -36,7 +36,7 @@ trait JupyterNotebook extends Datasets with Project with KnowledgeGraphApi {
   }
 
   def `verify user can work with Jupyter notebook`: Unit = {
-    val jupyterLabPage = `launch an environment`
+    val jupyterLabPage = `launch a session`
 
     When("the user clicks on the Terminal icon")
     click on jupyterLabPage.terminalIcon sleep (2 seconds)
@@ -44,7 +44,7 @@ trait JupyterNotebook extends Datasets with Project with KnowledgeGraphApi {
     And("the user creates a dataset")
     `create a dataset`(jupyterLabPage, datasetName)
 
-    `stop environment`
+    `stop session`
 
     When("all the events are processed by the knowledge-graph")
     `wait for KG to process events`(projectDetails.asProjectIdentifier)

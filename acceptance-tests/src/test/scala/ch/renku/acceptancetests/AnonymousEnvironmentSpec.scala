@@ -23,8 +23,8 @@ import ch.renku.acceptancetests.workflows._
 
 class AnonymousEnvironmentSpec extends AcceptanceSpec with AnonEnv with Login {
 
-  Scenario("User can launch anonymous environment") {
-    `launch anonymous environment`(anonEnvConfig)
-      .map(_ => `stop environment`(anonEnvConfig.projectId))
+  Scenario("User can launch session") {
+    `launch anonymous session`(anonEnvConfig)
+      .map(_ => `stop session`(anonEnvConfig.projectId))
   }
 }

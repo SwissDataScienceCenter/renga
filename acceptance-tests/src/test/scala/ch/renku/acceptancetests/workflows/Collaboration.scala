@@ -33,9 +33,14 @@ trait Collaboration {
     click on projectPage.Collaboration.MergeRequests.tab sleep (1 second)
   }
 
-  def `verify there are no merge requests`: Unit = {
-    Then("they should see a 'No merge requests to display' info")
-    verify userCanSee projectPage.Collaboration.MergeRequests.noMergeRequests
+  def `verify that the GitLab MR iFrame is visible`: Unit = {
+    Then("they should see the GitLab MR page in an iFrame")
+    verify userCanSee projectPage.Collaboration.MergeRequests.collaborationIframe
+  }
+
+  def `verify that the GitLab MR page link is visible`: Unit = {
+    Then("they should see a link to the GitLab MR page")
+    verify userCanSee projectPage.Collaboration.MergeRequests.gitLabMrLink
   }
 
   def `navigate to the issues tab`: Unit = {
@@ -45,67 +50,14 @@ trait Collaboration {
     click on projectPage.Collaboration.Issues.tab sleep (1 second)
   }
 
-  def `verify there are no issues`: Unit = {
-    Then("they should see a 'No issues to display' info")
-    verify userCanSee projectPage.Collaboration.Issues.noIssues
+  def `verify that the GitLab issues iFrame is visible`: Unit = {
+    Then("they should see the GitLab issues page in an iFrame")
+    verify userCanSee projectPage.Collaboration.Issues.collaborationIframe
   }
 
-  def `create a new issue`(title: String, description: String): Unit = {
-    When("the user navigates to the Collaboration tab")
-    click on projectPage.Collaboration.tab sleep (1 second)
-    And("they navigate to the Issues sub tab")
-    click on projectPage.Collaboration.Issues.tab sleep (2 seconds)
-    And("the user clicks on the 'New Issue' button")
-    click on projectPage.Collaboration.Issues.newIssueLink sleep (1 second)
-
-    And("they fill out the form")
-    `create an issue with title and description`(title, description)
-  }
-
-  def `view the issue`(issueTitle: String): Unit =
-    `try few times before giving up` { _ =>
-      Then("the new issue should be displayed in the list")
-      val issueTitles = projectPage.Collaboration.Issues.issueTitles
-      if (issueTitles.size < 1) fail("There should be at least one issue")
-      issueTitles.find(_ == issueTitle) getOrElse fail("Issue with expected title could not be found.")
-    }
-
-  def `create an issue with title and description`(title: String, description: String): Unit = {
-    val tf = projectPage.Collaboration.Issues.NewIssue.titleField
-    tf.clear() sleep (1 second)
-    tf enterValue title
-    click on projectPage.Collaboration.Issues.NewIssue.markdownSwitch sleep (1 second)
-    projectPage.Collaboration.Issues.NewIssue.descriptionField enterValue description
-    click on projectPage.Collaboration.Issues.NewIssue.createIssueButton sleep (1 second)
-  }
-
-  def `verify branch was added`: Unit = {
-    When("the user navigates to the Collaboration tab")
-    click on projectPage.Collaboration.tab sleep (1 second)
-    Then("they should see a 'Do you want to create a merge request for branch...' banner")
-    verify userCanSee projectPage.Collaboration.MergeRequests.futureMergeRequestBanner
-  }
-
-  def `create a new merge request`: Unit = {
-    `try few times before giving up` { _ =>
-      When("the user navigates to the Collaboration tab")
-      click on projectPage.Collaboration.tab sleep (1 second)
-      And("they navigate to the Merge Request sub tab")
-      click on projectPage.Collaboration.MergeRequests.tab sleep (5 second)
-      And("they can see the 'Create Merge Request' button")
-      verify userCanSee projectPage.Collaboration.MergeRequests.createMergeRequestButton
-    }
-    And("the user clicks on the 'Create Merge Request' button")
-    click on projectPage.Collaboration.MergeRequests.createMergeRequestButton sleep (5 second)
-    And("they navigate to the MergeRequest sub tab")
-    click on projectPage.Collaboration.MergeRequests.tab sleep (4 second)
-  }
-
-  def `view the merge request`(title: String): Unit = {
-    Then("the new Merge Request should be displayed in the list")
-    val mrTitles = projectPage.Collaboration.MergeRequests.mergeRequestsTitles
-    if (mrTitles.isEmpty) fail("There should be at least one merge request")
-    mrTitles.find(_ == title) getOrElse fail("Merge Request with expected title could not be found.")
+  def `verify that the GitLab issues page link is visible`: Unit = {
+    Then("they should see a link to the GitLab issues page")
+    verify userCanSee projectPage.Collaboration.Issues.gitLabIssuesLink
   }
 
   def `create a branch in JupyterLab`(jupyterLabPage: JupyterLabPage, branchName: String): Unit = {

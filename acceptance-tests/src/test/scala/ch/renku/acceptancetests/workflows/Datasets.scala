@@ -51,18 +51,19 @@ trait Datasets {
     `changing its title`(to = datasetName.toString).modifying(newDatasetPage) sleep (1 second)
 
     And("the user saves the changes")
-    click on newDatasetPage.ModificationForm.datasetSubmitButton sleep (2 second)
+    newDatasetPage.ModificationForm.clickOnDatasetSubmitButton sleep (2 second)
     pause asLongAsBrowserAt newDatasetPage
 
-    And("all the events are processed by the knowledge-graph")
+    And("all the events are processed by the knowledge-graph ")
     `wait for KG to process events`(projectPage.asProjectIdentifier)
 
     val datasetPage = DatasetPage(datasetName)
-    Then("the user should see its newly created dataset and the project it belongs to")
+    Then("the user should see its newly created dataset without the KG warning message")
     reloadPage() sleep (2 seconds)
     verify browserAt datasetPage
     verify that datasetPage.datasetTitle contains datasetName.value
-    datasetPage.ProjectsList.link(projectPage).isDisplayed shouldBe true
+    val datasetNotInKgWarningSign = datasetPage.datasetNotInKgWarning
+    if (datasetNotInKgWarningSign.size > 0) fail("The dataset is not in the KG")
 
     datasetPage
   }
@@ -89,19 +90,19 @@ trait Datasets {
     click on newDatasetPage.ModificationForm.fileUploadButton sleep (3 second)
 
     And("the user saves the changes")
-    click on newDatasetPage.ModificationForm.datasetSubmitButton sleep (2 second)
+    newDatasetPage.ModificationForm.clickOnDatasetSubmitButton sleep (2 second)
     pause asLongAsBrowserAt newDatasetPage
 
     And("all the events are processed by the knowledge-graph")
     `wait for KG to process events`(projectPage.asProjectIdentifier)
 
     val datasetPage = DatasetPage(datasetName)
-    Then("the user should see its newly created dataset and the project it belongs to")
+    Then("the user should see its newly created dataset without the KG warning message")
     reloadPage() sleep (2 seconds)
     verify browserAt datasetPage
     verify that datasetPage.datasetTitle contains datasetName.value
-    verify that datasetPage.datasetFiles attributeContains ("href", fileUrl.asFileName)
-    datasetPage.ProjectsList.link(projectPage).isDisplayed shouldBe true
+    val datasetNotInKgWarningSign = datasetPage.datasetNotInKgWarning
+    if (datasetNotInKgWarningSign.size > 0) fail("The dataset is not in the KG")
 
     datasetPage
   }
@@ -109,7 +110,7 @@ trait Datasets {
   def `navigate to the dataset`(datasetPage: DatasetPage): Unit = {
 
     Given("the user is on the Datasets tab")
-    click on projectPage.Datasets.tab sleep (1 second)
+    click on projectPage.Datasets.tab sleep (5 seconds)
 
     When(s"the user clicks on the dataset name")
     click on projectPage.Datasets.DatasetsList.link(to = datasetPage) sleep (1 second)
@@ -134,19 +135,24 @@ trait Datasets {
     }
 
     And("the user saves the modification")
-    click on datasetPage.ModificationForm.datasetSubmitButton sleep (2 seconds)
+    datasetPage.ModificationForm.clickOnDatasetSubmitButton sleep (2 seconds)
 
     verify browserAt datasetPage
 
     And("all the events are processed by the knowledge-graph")
     `wait for KG to process events`(projectPage.asProjectIdentifier)
 
-    Then("the user should see its dataset and to which project it belongs")
+    And("the user should see its newly created dataset without the KG warning message")
     reloadPage() sleep (2 seconds)
 
     `try few times before giving up` { _ =>
-      datasetPage.ProjectsList.link(projectPage).isDisplayed shouldBe true
+      val datasetNotInKgWarningSign = datasetPage.datasetNotInKgWarning
+      if (datasetNotInKgWarningSign.size > 0) fail("The dataset is not in the KG")
     }
+
+    val newTitle = by.newValue
+    Then("the dataset new title should contain " + newTitle)
+    verify that datasetPage.datasetTitle contains newTitle
 
     datasetPage
   }

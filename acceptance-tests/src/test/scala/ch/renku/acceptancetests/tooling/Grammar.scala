@@ -24,12 +24,15 @@ import ch.renku.acceptancetests.pages.Page
 import org.openqa.selenium.{WebDriver, WebElement}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.exceptions._
 import org.scalatestplus.selenium
 import org.scalatestplus.selenium.WebBrowser
 
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
+import cats.instances.boolean
+import java.{util => ju}
 
 trait Grammar extends WebElementOps with Eventually {
   self: WebBrowser with AcceptanceSpec =>

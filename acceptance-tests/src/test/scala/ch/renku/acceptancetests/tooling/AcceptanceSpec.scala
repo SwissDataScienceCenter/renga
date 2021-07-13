@@ -56,8 +56,11 @@ trait AcceptanceSpec
       case Some(_) =>
         new ChromeDriver(
           new ChromeDriverService.Builder().withWhitelistedIps("127.0.0.1").build,
-          new ChromeOptions().addArguments("--no-sandbox", "--headless", "--disable-gpu")
+          new ChromeOptions().addArguments("--no-sandbox", "--headless", "--disable-gpu", "--window-size=1920,1400")
         )
-      case None => new ChromeDriver()
+      case None =>
+        new ChromeDriver(
+          new ChromeOptions().addArguments("--window-size=1920,1400")
+        )
     }
 }

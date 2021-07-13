@@ -56,7 +56,7 @@ case object ProjectsPage
     def maybeLinkTo(
         project:          ProjectDetails
     )(implicit webDriver: WebDriver, userCredentials: UserCredentials): Option[WebElement] = eventually {
-      find(cssSelector(s"a[href='/projects/${userCredentials.username}/${project.title.toPathSegment}']"))
+      find(cssSelector(s"a[href='/projects/${userCredentials.userNamespace}/${project.title.toPathSegment}']"))
     }
 
     /** Return all the project links.

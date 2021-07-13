@@ -110,9 +110,7 @@ object ProviderLoginPage
   }
 
   def logInButton(implicit webDriver: WebDriver): WebElement = eventually {
-    find(cssSelector(".btn.btn-primary.btn-block.btn-lg"))
-      .orElse(find(cssSelector("#kc-login")))
-      .getOrElse(fail("Log In button not found"))
+    find(cssSelector("#kc-login")) getOrElse fail("Log In button not found")
   }
 }
 

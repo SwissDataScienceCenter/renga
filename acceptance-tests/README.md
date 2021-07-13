@@ -97,7 +97,7 @@ In order to run the tests you need to install:
   * Mac users: `brew install sbt`
   * Linux users see: https://www.scala-sbt.org/1.x/docs/Installing-sbt-on-Linux.html
 * chromedriver
-  * Mac users: `brew tap homebrew/cask && brew cask install chromedriver`
+  * Mac users: `brew tap homebrew/cask && brew install --cask chromedriverr`
   * Debian based users: `sudo apt-get install chromium-chromedriver`
   * for other see: https://github.com/SeleniumHQ/selenium/wiki/ChromeDriver
 * Python 3, pip and the following packages which can be installed using `python3 -m pip install '<package-name>==<version>'`:
@@ -210,24 +210,24 @@ objects are put into the `pages` subfolder.
 * Q: I'm getting `Error: Could not find or load main class`
 
   A: Please verify version of sbt in your computer using `sbt sbtVersion` but run it not from the project root.
-  
-  
+
+
 * Q:  `value seconds is not a member of Int`
 
-  A:  
+  A:
 
   ```
   import scala.concurrent.duration._
   ```
 
-* Q: 
+* Q:
   ```
   type mismatch;
    found   : String("Parent Group")
    required: eu.timepit.refined.api.Refined[String,eu.timepit.refined.collection.NonEmpty]
   ```
- 
-  A: 
+
+  A:
   ```
   import eu.timepit.refined.auto._
   ```
