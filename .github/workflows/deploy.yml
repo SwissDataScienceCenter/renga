@@ -2,14 +2,13 @@ name: Deploy and Test
 
 on:
   push:
-    branches: ['master']
+    branches: ["master"]
     paths:
-    - helm-chart/**
-    - scripts/**
-    - acceptance-tests/**
-    - .github/**
+      - helm-chart/**
+      - scripts/**
+      - acceptance-tests/**
+      - .github/**
   workflow_dispatch:
-
 
 jobs:
   deploy:
@@ -18,71 +17,71 @@ jobs:
       name: dev
       url: https://dev.renku.ch
     steps:
-    - uses: actions/checkout@v2
-    - name: deploy renku
-      uses: ./actions/deploy-renku
-      env:
-        DOCKER_PASSWORD: ${{ secrets.RENKU_DOCKER_PASSWORD }}
-        DOCKER_USERNAME: ${{ secrets.RENKU_DOCKER_USERNAME }}
-        KUBECONFIG: "${{ github.workspace }}/renkubot-kube.config"
-        RENKU_RELEASE: renku
-        RENKU_VALUES_FILE: "${{ github.workspace }}/values.yaml"
-        RENKU_VALUES: ${{ secrets.CD_VALUES }}
-        RENKUBOT_KUBECONFIG: ${{ secrets.RENKUBOT_DEV_KUBECONFIG }}
-        RENKU_BOT_DEV_PASSWORD: ${{ secrets.RENKU_BOT_DEV_PASSWORD }}
-        RENKU_ANONYMOUS_SESSIONS: true
-        RENKU_TESTS_ENABLED: true
-        TEST_ARTIFACTS_PATH: "tests-artifacts-${{ github.sha }}"
-        renku: "@master"
-    - uses: 8398a7/action-slack@v3
-      with:
-        status: custom
-        fields: job,commit
-        custom_payload: |
-          {
-            attachments: [{
-              color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-              text: `${process.env.AS_JOB} commit ${process.env.AS_COMMIT}: ${{ job.status }}.`,
-            }]
-          }
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      if: failure()
+      - uses: actions/checkout@v2
+      - name: deploy renku
+        uses: SwissDataScienceCenter/renku-actions/deploy-renku@v0.1.0
+        env:
+          DOCKER_PASSWORD: ${{ secrets.RENKU_DOCKER_PASSWORD }}
+          DOCKER_USERNAME: ${{ secrets.RENKU_DOCKER_USERNAME }}
+          KUBECONFIG: "${{ github.workspace }}/renkubot-kube.config"
+          RENKU_RELEASE: renku
+          RENKU_VALUES_FILE: "${{ github.workspace }}/values.yaml"
+          RENKU_VALUES: ${{ secrets.CD_VALUES }}
+          RENKUBOT_KUBECONFIG: ${{ secrets.RENKUBOT_DEV_KUBECONFIG }}
+          RENKU_BOT_DEV_PASSWORD: ${{ secrets.RENKU_BOT_DEV_PASSWORD }}
+          RENKU_ANONYMOUS_SESSIONS: true
+          RENKU_TESTS_ENABLED: true
+          TEST_ARTIFACTS_PATH: "tests-artifacts-${{ github.sha }}"
+          renku: "@master"
+      - uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          fields: job,commit
+          custom_payload: |
+            {
+              attachments: [{
+                color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
+                text: `${process.env.AS_JOB} commit ${process.env.AS_COMMIT}: ${{ job.status }}.`,
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: failure()
   test:
     runs-on: ubuntu-latest
     needs: deploy
     steps:
-    - uses: actions/checkout@v2
-    - name: Test
-      env:
-        KUBECONFIG: ${{ github.workspace }}/renkubot-kube.config
-        RENKUBOT_KUBECONFIG: ${{ secrets.RENKUBOT_DEV_KUBECONFIG }}
-      run: |
-        echo "$RENKUBOT_KUBECONFIG" > renkubot-kube.config
-        helm test renku --namespace renku --timeout 80m --logs
-    - name: Download artifact for packaging on failure
-      if: failure()
-      uses: ./actions/download-test-artifacts
-      env:
-        RENKU_VALUES: ${{ secrets.CI_RENKU_VALUES }}
-        TEST_ARTIFACTS_PATH: "tests-artifacts-${{ github.sha }}"
-    - name: Upload screenshots on failure
-      if: failure()
-      uses: actions/upload-artifact@v1
-      with:
-        name: acceptance-test-artifacts
-        path: ${{ github.workspace }}/test-artifacts/
-    - uses: 8398a7/action-slack@v3
-      with:
-        status: custom
-        fields: job,commit
-        custom_payload: |
-          {
-            attachments: [{
-              color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-              text: `${process.env.AS_JOB} commit ${process.env.AS_COMMIT}: ${{ job.status }}.`,
-            }]
-          }
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      if: failure()
+      - uses: actions/checkout@v2
+      - name: Test
+        env:
+          KUBECONFIG: ${{ github.workspace }}/renkubot-kube.config
+          RENKUBOT_KUBECONFIG: ${{ secrets.RENKUBOT_DEV_KUBECONFIG }}
+        run: |
+          echo "$RENKUBOT_KUBECONFIG" > renkubot-kube.config
+          helm test renku --namespace renku --timeout 80m --logs
+      - name: Download artifact for packaging on failure
+        if: failure()
+        uses: SwissDataScienceCenter/renku-actions/download-test-artifacts@v0.1.0
+        env:
+          RENKU_VALUES: ${{ secrets.CI_RENKU_VALUES }}
+          TEST_ARTIFACTS_PATH: "tests-artifacts-${{ github.sha }}"
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v1
+        with:
+          name: acceptance-test-artifacts
+          path: ${{ github.workspace }}/test-artifacts/
+      - uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          fields: job,commit
+          custom_payload: |
+            {
+              attachments: [{
+                color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
+                text: `${process.env.AS_JOB} commit ${process.env.AS_COMMIT}: ${{ job.status }}.`,
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: failure()

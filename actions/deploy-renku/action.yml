@@ -1,8 +1,0 @@
-name: 'deploy-renku'
-description: 'Deploy Renku'
-runs:
-  using: 'docker'
-  image: 'Dockerfile'
-branding:
-  icon: 'activity'
-  color: 'blue'

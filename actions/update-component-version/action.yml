@@ -1,8 +1,0 @@
-name: 'Component update'
-description: 'Update component version in a parent deployment chart.'
-runs:
-  using: 'docker'
-  image: 'Dockerfile'
-branding:
-  icon: 'activity'
-  color: 'blue'

@@ -2,46 +2,46 @@ name: Deploy and Test PR
 on:
   pull_request:
     types:
-    - opened
-    - synchronize
-    - reopened
-    - closed
-    - edited
+      - opened
+      - synchronize
+      - reopened
+      - closed
+      - edited
 
 jobs:
   cleanup-previous-runs:
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
     steps:
-    - uses: rokroskar/workflow-run-cleanup-action@213fe75c3e785223a02c3cc50b1639f1deeb9eec
-      env:
-        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: rokroskar/workflow-run-cleanup-action@213fe75c3e785223a02c3cc50b1639f1deeb9eec
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
   test-docs:
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
-      with:
-        python-version: 3.7
-    - name: install dependencies
-      run: |
-        sudo apt-get update -y && sudo apt-get install graphviz
-        pip install --upgrade pip pipenv
-        pipenv install --deploy --dev --system
-    - name: test the docs build
-      env:
-        SIDEBAR: 1
-      run: |
-        cd docs
-        sphinx-build -nNW -b spelling -d _build/doctrees . _build/spelling
-        sphinx-build -qnNW . _build/html
-    - name: Upload docs
-      uses: actions/upload-artifact@v2
-      if: success()
-      with:
-        name: docs
-        path: docs/_build/html/
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: install dependencies
+        run: |
+          sudo apt-get update -y && sudo apt-get install graphviz
+          pip install --upgrade pip pipenv
+          pipenv install --deploy --dev --system
+      - name: test the docs build
+        env:
+          SIDEBAR: 1
+        run: |
+          cd docs
+          sphinx-build -nNW -b spelling -d _build/doctrees . _build/spelling
+          sphinx-build -qnNW . _build/html
+      - name: Upload docs
+        uses: actions/upload-artifact@v2
+        if: success()
+        with:
+          name: docs
+          path: docs/_build/html/
   check-deploy:
     runs-on: ubuntu-20.04
     outputs:
@@ -56,7 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - id: deploy-comment
-        uses: ./actions/check-pr-description
+        uses: SwissDataScienceCenter/renku-actions/check-pr-description@v0.1.0
         with:
           string: /deploy
           pr_ref: ${{ github.event.number }}
@@ -67,82 +67,82 @@ jobs:
     environment:
       name: ci-renku-${{ github.event.number }}
     steps:
-    - uses: actions/checkout@v2
-    - name: renku build and deploy
-      if: needs.check-deploy.outputs.pr-contains-string == 'true'
-      uses: ./actions/deploy-renku
-      env:
-        DOCKER_PASSWORD: ${{ secrets.RENKU_DOCKER_PASSWORD }}
-        DOCKER_USERNAME: ${{ secrets.RENKU_DOCKER_USERNAME }}
-        GITLAB_TOKEN: ${{ secrets.DEV_GITLAB_TOKEN }}
-        KUBECONFIG: "${{ github.workspace }}/renkubot-kube.config"
-        RANCHER_PROJECT_ID: ${{ secrets.CI_RANCHER_PROJECT }}
-        RENKU_ANONYMOUS_SESSIONS: true
-        RENKU_RELEASE: ci-renku-${{ github.event.number }}
-        RENKU_VALUES_FILE: "${{ github.workspace }}/values.yaml"
-        RENKU_VALUES: ${{ secrets.CI_RENKU_VALUES }}
-        RENKUBOT_KUBECONFIG: ${{ secrets.RENKUBOT_DEV_KUBECONFIG }}
-        RENKUBOT_RANCHER_BEARER_TOKEN: ${{ secrets.RENKUBOT_RANCHER_BEARER_TOKEN }}
-        TEST_ARTIFACTS_PATH: "tests-artifacts-${{ github.sha }}"
-        renku: "@${{ github.head_ref }}"
-        renku_core: "${{ needs.check-deploy.outputs.renku-core }}"
-        renku_gateway: "${{ needs.check-deploy.outputs.renku-gateway }}"
-        renku_graph: "${{ needs.check-deploy.outputs.renku-graph }}"
-        renku_notebooks: "${{ needs.check-deploy.outputs.renku-notebooks }}"
-        renku_ui: "${{ needs.check-deploy.outputs.renku-ui }}"
-        extra_values: "${{ needs.check-deploy.outputs.extra-values }}"
-    - name: Check existing renkubot comment
-      if: needs.check-deploy.outputs.pr-contains-string == 'true'
-      uses: peter-evans/find-comment@v1
-      id: findcomment
-      with:
-        issue-number: ${{ github.event.pull_request.number }}
-        comment-author: 'RenkuBot'
-    - name: Create comment pre deploy
-      if: "steps.findcomment.outputs.comment-id == 0 && needs.check-deploy.outputs.pr-contains-string == 'true'"
-      uses: peter-evans/create-or-update-comment@v1
-      with:
-        token: ${{ secrets.RENKUBOT_GITHUB_TOKEN }}
-        issue-number: ${{ github.event.pull_request.number }}
-        body: |
-          You can access the deployment of this PR at https://ci-renku-${{ github.event.number }}.dev.renku.ch
+      - uses: actions/checkout@v2
+      - name: renku build and deploy
+        if: needs.check-deploy.outputs.pr-contains-string == 'true'
+        uses: SwissDataScienceCenter/renku-actions/deploy-renku@v0.1.0
+        env:
+          DOCKER_PASSWORD: ${{ secrets.RENKU_DOCKER_PASSWORD }}
+          DOCKER_USERNAME: ${{ secrets.RENKU_DOCKER_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.DEV_GITLAB_TOKEN }}
+          KUBECONFIG: "${{ github.workspace }}/renkubot-kube.config"
+          RANCHER_PROJECT_ID: ${{ secrets.CI_RANCHER_PROJECT }}
+          RENKU_ANONYMOUS_SESSIONS: true
+          RENKU_RELEASE: ci-renku-${{ github.event.number }}
+          RENKU_VALUES_FILE: "${{ github.workspace }}/values.yaml"
+          RENKU_VALUES: ${{ secrets.CI_RENKU_VALUES }}
+          RENKUBOT_KUBECONFIG: ${{ secrets.RENKUBOT_DEV_KUBECONFIG }}
+          RENKUBOT_RANCHER_BEARER_TOKEN: ${{ secrets.RENKUBOT_RANCHER_BEARER_TOKEN }}
+          TEST_ARTIFACTS_PATH: "tests-artifacts-${{ github.sha }}"
+          renku: "@${{ github.head_ref }}"
+          renku_core: "${{ needs.check-deploy.outputs.renku-core }}"
+          renku_gateway: "${{ needs.check-deploy.outputs.renku-gateway }}"
+          renku_graph: "${{ needs.check-deploy.outputs.renku-graph }}"
+          renku_notebooks: "${{ needs.check-deploy.outputs.renku-notebooks }}"
+          renku_ui: "${{ needs.check-deploy.outputs.renku-ui }}"
+          extra_values: "${{ needs.check-deploy.outputs.extra-values }}"
+      - name: Check existing renkubot comment
+        if: needs.check-deploy.outputs.pr-contains-string == 'true'
+        uses: peter-evans/find-comment@v1
+        id: findcomment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: "RenkuBot"
+      - name: Create comment pre deploy
+        if: "steps.findcomment.outputs.comment-id == 0 && needs.check-deploy.outputs.pr-contains-string == 'true'"
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.RENKUBOT_GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            You can access the deployment of this PR at https://ci-renku-${{ github.event.number }}.dev.renku.ch
 
   test-pr:
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
     needs: [check-deploy, deploy-pr]
     steps:
-    - uses: actions/checkout@v2
-    - name: Test the PR
-      if: "needs.check-deploy.outputs.pr-contains-string == 'true' && needs.check-deploy.outputs.test-enabled == 'true'"
-      env:
-        KUBECONFIG: ${{ github.workspace }}/renkubot-kube.config
-        RENKUBOT_KUBECONFIG: ${{ secrets.RENKUBOT_KUBECONFIG }}
-        RENKU_RELEASE: ci-renku-${{ github.event.number }}
-      run: |
-        echo "$RENKUBOT_KUBECONFIG" > renkubot-kube.config
-        helm test ${RENKU_RELEASE} --namespace ${RENKU_RELEASE} --timeout 80m --logs
-    - name: Download artifact for packaging on failure
-      if: failure()
-      uses: ./actions/download-test-artifacts
-      env:
-        RENKU_VALUES: ${{ secrets.CI_RENKU_VALUES }}
-        TEST_ARTIFACTS_PATH: "tests-artifacts-${{ github.sha }}"
-    - name: Upload screenshots on failure
-      if: failure()
-      uses: actions/upload-artifact@v1
-      with:
-        name: acceptance-test-artifacts
-        path: ${{ github.workspace }}/test-artifacts/
+      - uses: actions/checkout@v2
+      - name: Test the PR
+        if: "needs.check-deploy.outputs.pr-contains-string == 'true' && needs.check-deploy.outputs.test-enabled == 'true'"
+        env:
+          KUBECONFIG: ${{ github.workspace }}/renkubot-kube.config
+          RENKUBOT_KUBECONFIG: ${{ secrets.RENKUBOT_KUBECONFIG }}
+          RENKU_RELEASE: ci-renku-${{ github.event.number }}
+        run: |
+          echo "$RENKUBOT_KUBECONFIG" > renkubot-kube.config
+          helm test ${RENKU_RELEASE} --namespace ${RENKU_RELEASE} --timeout 80m --logs
+      - name: Download artifact for packaging on failure
+        if: failure()
+        uses: SwissDataScienceCenter/renku-actions/download-test-artifacts@v0.1.0
+        env:
+          RENKU_VALUES: ${{ secrets.CI_RENKU_VALUES }}
+          TEST_ARTIFACTS_PATH: "tests-artifacts-${{ github.sha }}"
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v1
+        with:
+          name: acceptance-test-artifacts
+          path: ${{ github.workspace }}/test-artifacts/
   cleanup:
     if: github.event.action == 'closed'
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
-    - name: renku teardown
-      uses: ./actions/teardown-renku
-      env:
-        GITLAB_TOKEN: ${{ secrets.DEV_GITLAB_TOKEN }}
-        KUBECONFIG: "${{ github.workspace }}/renkubot-kube.config"
-        RENKU_RELEASE: ci-renku-${{ github.event.number }}
-        RENKUBOT_KUBECONFIG: ${{ secrets.RENKUBOT_DEV_KUBECONFIG }}
+      - uses: actions/checkout@v2
+      - name: renku teardown
+        uses: SwissDataScienceCenter/renku-actions/teardown-renku@v0.1.0
+        env:
+          GITLAB_TOKEN: ${{ secrets.DEV_GITLAB_TOKEN }}
+          KUBECONFIG: "${{ github.workspace }}/renkubot-kube.config"
+          RENKU_RELEASE: ci-renku-${{ github.event.number }}
+          RENKUBOT_KUBECONFIG: ${{ secrets.RENKUBOT_DEV_KUBECONFIG }}

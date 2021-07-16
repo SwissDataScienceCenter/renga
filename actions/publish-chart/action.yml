@@ -1,8 +1,0 @@
-name: 'publish-chart'
-description: 'Push images and publish the chart with chartpress.'
-runs:
-  using: 'docker'
-  image: 'Dockerfile'
-branding:
-  icon: 'activity'
-  color: 'blue'
