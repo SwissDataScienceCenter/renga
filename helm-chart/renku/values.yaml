@@ -414,7 +414,7 @@ ui:
     enabled: true
     image:
       repository: renku/renku-ui
-      tag: "1.0.0-beta3"
+      tag: "1.0.0-beta4"
 
   #  welcomePage:
   #    text: "## Some markdown text here!"
