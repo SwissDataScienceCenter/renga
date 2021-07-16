@@ -1,7 +1,7 @@
 .. _customizing:
 
 Customizing sessions
-====================================
+====================
 
 Very soon, you will want to make changes to the default configuration of your
 interactive sessions. The default environments we provide are pretty bare-bones.

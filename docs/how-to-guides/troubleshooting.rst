@@ -1,7 +1,7 @@
 .. _troubleshooting:
 
 Troubleshooting
-================
+===============
 
 .. _cli-troubleshooting:
 

@@ -9,7 +9,18 @@ The Renku Project Documentation
 ===============================
 
 
-.. include:: _sidebar.rst.inc
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+
+   About Renku <introduction/index>
+   Getting Started <getting-started>
+   How-to Guides <how-to-guides/index>
+   Topic guides <topic-guides/index>
+   Reference <reference/index>
+   Get in touch <get-in-touch>
+   Release Notes <release-notes>
+   License <https://www.apache.org/licenses/LICENSE-2.0>
 
 
 .. epigraph::

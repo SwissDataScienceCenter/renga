@@ -16,4 +16,4 @@ Swiss Data Science Center based at EPFL and ETHZ.
    :maxdepth: 2
 
    why.rst
-   what_is_renku.rst
+   what-is-renku.rst

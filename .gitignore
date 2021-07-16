@@ -17,7 +17,7 @@ services/keycloak/data/
 
 # Sphinx documentation
 .doctrees
-docs/_sidebar.rst.inc
+_sidebar.rst.inc
 
 ### Metals -- Scala Language Server ###
 .metals

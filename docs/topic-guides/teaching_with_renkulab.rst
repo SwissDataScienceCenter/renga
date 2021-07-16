@@ -1,7 +1,7 @@
-.. _courses:
+.. _teaching_with_renkulab:
 
-Teach with Renkulab
-===================
+Teaching with Renkulab
+======================
 
 One of the bottlenecks in teaching analysis and programming skills is that often
 a large portion of the session is spent installing software. A few reasons for this

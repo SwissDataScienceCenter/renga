@@ -48,21 +48,6 @@ are either built or extended by us.
 .. graphviz:: /_static/graphviz/renku_architecture.dot
 
 
-Important Concepts
-------------------
-
-In order to develop for the platform, it is strongly advised to get
-familiarized with a few foundational concepts:
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-
-   JWT  <../general/json_web_tokens>
-
-- :ref:`json_web_tokens` (JWT)
-
-
 .. _renku: https://github.com/SwissDataScienceCenter/renku
 .. _renku-python: https://github.com/SwissDataScienceCenter/renku-python
 .. _renku-ui: https://github.com/SwissDataScienceCenter/renku-ui

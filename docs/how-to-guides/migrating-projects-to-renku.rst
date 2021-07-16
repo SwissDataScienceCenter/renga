@@ -1,4 +1,4 @@
-.. _migrating_to_renku:
+.. _migrating_projects_to_renku:
 
 Import Existing Project
 =======================
@@ -101,7 +101,7 @@ access and security. For example, making your GitLab repository public also make
 Renku project public. In addition, granting access to specific users is also done through
 GitLab. When you create the repository in GitLab you can select the namespace that
 the project will belong to (this can be your personal namespace or a group) and the
-project (i.e. repository) name. The instructions below show how you can use the namespace 
+project (i.e. repository) name. The instructions below show how you can use the namespace
 and project name to push your code into the newly created project.
 
 If your project does not have a remote yet (check ``git remote``), you can use ``origin``::

@@ -1,4 +1,4 @@
-.. _admin_documentation:
+.. _deploying-renku:
 
 Deploying the Renku platform
 ============================

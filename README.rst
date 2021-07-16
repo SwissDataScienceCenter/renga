@@ -76,6 +76,13 @@ feel free to make an account and try it out! You can follow the `first steps
 or `continue reading about the Renku project
 <https://renku.readthedocs.io/en/latest/introduction/index.html#renku-introduction>`_.
 
+Documentation
+-------------
+
+* `Tutorials <https://renku.readthedocs.io/en/latest/getting-started.html>`_: how to get your Renku work off the ground
+* `Topic Guides <https://renku.readthedocs.io/en/latest/topic-guides.html>`_: discussions about concepts central to Renku
+* `How-to Guides <https://renku.readthedocs.io/en/latest/how-to-guides.html>`_: recipes for common use-cases with Renku for users and administrators
+* `Reference <https://renku.readthedocs.io/en/latest/reference.html>`_: syntax, structure, architecture, etc.
 
 Contributing
 ------------

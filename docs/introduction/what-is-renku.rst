@@ -40,7 +40,7 @@ for search and discovery; a few custom services for all renku-specific tasks
 like handling datasets.
 
 Please contact us if you would like to deploy your own instance or see
-:ref:`admin_documentation`.
+:ref:`admin-documentation`.
 
 
 .. _renku:
