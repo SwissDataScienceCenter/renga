@@ -26,10 +26,6 @@ data:
     done
 
     psql -v ON_ERROR_STOP=1 <<-EOSQL
-        DELETE FROM oauth_applications WHERE uid='jupyterhub';
-        INSERT INTO oauth_applications (name, uid, scopes, redirect_uri, secret, trusted)
-        VALUES ('jupyterhub', 'jupyterhub', 'api read_user', '{{ template "http" . }}://{{ .Values.global.renku.domain }}{{ .Values.notebooks.jupyterhub.hub.baseUrl }}hub/oauth_callback {{ template "http" . }}://{{ .Values.global.renku.domain }}/jupyterhub/hub/api/oauth2/authorize', '${JUPYTERHUB_AUTH_GITLAB_CLIENT_SECRET}', 'true');
-
         DELETE FROM oauth_applications WHERE uid='{{ .Values.global.gateway.gitlabClientId }}';
         INSERT INTO oauth_applications (name, uid, scopes, redirect_uri, secret, trusted)
         VALUES ('renku-ui', '{{ .Values.global.gateway.gitlabClientId }}', 'api read_user read_repository read_registry openid', '{{ template "http" . }}://{{ .Values.global.renku.domain }}/login/redirect/gitlab {{ template "http" . }}://{{ .Values.global.renku.domain }}/api/auth/gitlab/token', '${GATEWAY_GITLAB_CLIENT_SECRET}', 'true');
@@ -153,36 +149,3 @@ data:
         grant all privileges on schema "public" to "{{ .Values.global.graph.tokenRepository.postgresUser }}";
       EOSQL
   {{- end }}
-
-  init-jupyterhub-db.sh: |-
-      #!/bin/bash
-      set -x
-
-      JUPYTERHUB_POSTGRES_PASSWORD=$(cat /jupyterhub-postgres/jupyterhub-postgres-password)
-
-      psql -v ON_ERROR_STOP=1 <<-EOSQL
-          create database "{{ .Values.global.jupyterhub.postgresDatabase }}";
-          create user "{{ .Values.global.jupyterhub.postgresUser }}" password '$JUPYTERHUB_POSTGRES_PASSWORD';
-      EOSQL
-
-      psql -v ON_ERROR_STOP=1 --dbname "{{ .Values.global.jupyterhub.postgresDatabase }}" <<-EOSQL
-          create extension if not exists "pg_trgm";
-          revoke all on schema "public" from "public";
-          grant all privileges on database "{{ .Values.global.jupyterhub.postgresDatabase }}" to "{{ .Values.global.jupyterhub.postgresUser }}";
-          grant all privileges on schema "public" to "{{ .Values.global.jupyterhub.postgresUser }}";
-      EOSQL
-{{ if .Values.global.anonymousSessions.enabled }}
-      JUPYTERHUB_TMP_POSTGRES_PASSWORD=$(cat /jupyterhub-tmp-postgres/jupyterhub-tmp-postgres-password)
-
-      psql -v ON_ERROR_STOP=1 <<-EOSQL
-          create database "{{ .Values.global.jupyterhub.postgresDatabase }}-tmp";
-          create user "{{ .Values.global.jupyterhub.postgresUser }}-tmp" password '$JUPYTERHUB_TMP_POSTGRES_PASSWORD';
-      EOSQL
-
-      psql -v ON_ERROR_STOP=1 --dbname "{{ .Values.global.jupyterhub.postgresDatabase }}-tmp" <<-EOSQL
-          create extension if not exists "pg_trgm";
-          revoke all on schema "public" from "public";
-          grant all privileges on database "{{ .Values.global.jupyterhub.postgresDatabase }}-tmp" to "{{ .Values.global.jupyterhub.postgresUser }}-tmp";
-          grant all privileges on schema "public" to "{{ .Values.global.jupyterhub.postgresUser }}-tmp";
-      EOSQL
-{{ end }}

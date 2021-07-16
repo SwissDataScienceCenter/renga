@@ -35,15 +35,6 @@ global:
     password:
       value:
       overwriteOnHelmUpgrade: false
-  jupyterhub:
-    ## Name of the postgres database to be used by jupyterhub
-    postgresDatabase: jupyterhub
-    ## Postgres user for the jupyterhub database
-    postgresUser: jupyterhub
-    ## Postgres password for the jupyterhub database
-    postgresPassword:
-      value:
-      overwriteOnHelmUpgrade: false
   gateway:
     ## The client secret for the renku client application registered in keycloak.
     clientSecret: # use `uuidgen -r`
@@ -87,11 +78,6 @@ global:
     ## Set to true to enable anonymous sessions through
     ## a secondary Jupyterhub instance
     enabled: false
-    ## Set the postgres password for you secondary JH deployment
-    ## or force the (re)generation of it on helm upgrade.
-    postgresPassword:
-      value:
-      overwriteOnHelmUpgrade: false
 
 ## Ingress configuration
 ## See: https://kubernetes.io/docs/concepts/services-networking/ingress/
@@ -474,6 +460,15 @@ ui:
 
 # ## Configuration for the notebooks service
 notebooks:
+  ## serverDefaults specifies defaults used when server options parameters
+  ## are not specified in the post request to renku notebooks to start a session.
+  # serverDefaults:
+  #   defaultUrl: /lab
+  #   cpu_request: 0.5
+  #   mem_request: 1G
+  #   disk_request: 1G
+  #   gpu_request: 0
+  #   lfs_auto_fetch: false
   ## serverOptions allow for modifications to the notebook pod resource requests and the UI rendering
   # serverOptions:
   #   defaultUrl:
@@ -507,89 +502,19 @@ notebooks:
   #     default: false
   ## image registry host
   # imageRegistry:
-  ## JupyterHub setup
-  jupyterhub:
-    ## Configure rbac
-    # rbac:
-    #   enabled: true
-    hub:
-      ## Base path under which Jupyterhub is running, note the trailing slash!
-      baseUrl: /jupyterhub/
-
-      ## Secret used for signing JH cookies. Must be explicitly set, otherwise all
-      ## users are logged out whenever the hub pod is recreated!
-      ## See https://zero-to-jupyterhub.readthedocs.io/en/latest/reference/reference.html#hub-cookiesecret
-      cookieSecret: # `openssl rand -hex 32`
-
-      services:
-        ## Set the notebooks service API token
-        # notebooks:
-        #   api_token: notebookstoken
-
-        ## define the client ID and secret for the gateway
-        gateway:
-          oauth_no_confirm: true
-        #  oauth_client_id: gateway
-        #  apiToken: # use `openssl rand -hex 32`
-        #  oauth_redirect_uri: http://<gateway>/api/auth/jupyterhub/token
-        ## Configure gitlab and postgres:
-        ## Values need to be set to get jupyterhub to work
-        # extraEnv:
-        #  - name: GITLAB_URL
-        #    value: <gitlab url>
-        #  - name: DEBUG
-        #    value: "1"
-        #  - name: JUPYTERHUB_SPAWNER_CLASS
-        #    value: spawners.RenkuKubeSpawner
-        #  - name: PGPASSWORD
-        #    valueFrom:
-        #        secretKeyRef:
-        #          name: renku-jupyterhub-postgres
-        #          key: jupyterhub-postgres-password
-
-    proxy:
-      ## Must be set explicitly, generate using `openssl rand -hex 32`
-      secretToken:
-
-    ## Configure Jupyterhub to use GitLab as OAuth2 provider
-    auth:
-    #   type: gitlab
-    #   gitlab:
-    #     clientId: jupyterhub
-    #     clientSecret: dummy-secret
-    #     callbackUrl:  # Null value forces the default callback url
-
-    ## Store encrypted auth state in the JH db (enabled by default).
-    ## Key for encryption must be set explicitly!
-    ## See https://zero-to-jupyterhub.readthedocs.io/en/latest/reference/reference.html?highlight=cryptokey#auth-state
-      state:
-        # enabled: true
-        cryptoKey: # `openssl rand -hex 32`
-
-    ## Configure idle pod culling
-    # cull:
-    #   enabled: true
-    #   timeout: 86400
-    #   every: 60
-    singleuser:
-      image:
-        name: renku/renkulab-py
-        tag: 3.7-renku0.10.4-0.6.3
-    #   # use JupyterLab by default in notebook servers
-    #   defaultUrl: /lab
-
-    # By default Renku notebooks disables some of the default JupyterHub
-    # optimizations which can interfere with simple setups. See
-    # https://zero-to-jupyterhub.readthedocs.io/en/latest/administrator/optimization.html
-    # for details. You can re-enable this by uncommenting the following section
-    # scheduling:
-    #   userScheduler:
-    #     enabled: true
-    #   userPlaceholder:
-    #     enabled: true
-    # prePuller:
-    #   continuous:
-    #     enabled: true
+  oidc:
+    clientId: renku-jupyterserver
+    clientSecret: # use `uuidgen -r`
+    token_url:
+    auth_url:
+  session_ingress:
+    host: 
+    tls_secret:
+    annotations: |
+      {kubernetes.io/ingress.class: nginx,
+      nginx.ingress.kubernetes.io/proxy-body-size: "0",
+      nginx.ingress.kubernetes.io/proxy-buffer-size: 8k,
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"}
 
 tests:
   enabled: false

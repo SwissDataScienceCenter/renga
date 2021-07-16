@@ -10,5 +10,5 @@ RUN apk add python3 docker jq && \
     'ruamel.yaml<0.17.10' \
     'ruamel.yaml.clib<0.2.4'
 
-COPY deploy-dev-renku.py deploy_tmp_notebooks.py entrypoint.sh /
+COPY deploy-dev-renku.py entrypoint.sh /
 ENTRYPOINT /entrypoint.sh

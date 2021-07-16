@@ -9,17 +9,14 @@ domain_configurations:
   jupyterhubURL:             &jupyterhubURL                 https://[domain]/jupyterhub
   gatewayURL:                &gatewayURL                    https://[domain]/api
   uiserverURL:               &uiserverURL                   https://[domain]/ui-server
-  jupyterhubAuthCallbackUrl: &jupyterhub_gitlab_callbackUrl https://[domain]/jupyterhub/hub/oauth_callback
-  oauth_redirect_uri:        &oauth_redirect_uri            https://[domain]/api/auth/jupyterhub/token
+  notebookSessionAuthUrl:    &notebookSessionAuthUrl        https://[domain]/auth/realms/Renku/protocol/openid-connect/auth
+  notebookSessionTokenUrl:   &notebookSessionTokenUrl       https://[domain]/auth/realms/Renku/protocol/openid-connect/token
   ingressTLS:                &ingressTLS                    [ingress-tls]
 
   gitlabURL:                 &gitlabURL                     https://[gitlab-domain]
   gitlabPrefix:              &gitlabPrefix                  [gitlab-prefix]           ## /gitlab if part of Renku, / otherwise
   gitlabClientId:            &gitlabClientId                [gitlab-application-clientID]
   gitlabClientSecret:        &gitlabClientSecret            [gitlab-application-secret]
-
-  hubGitlabClientId:         &hubGitlabClientId             [hub-gitlab-application-clientID] ## If external GitLab, use gitlab-application-clientID
-  hubGitlabClientSecret:     &hubGitlabClientSecret         [hub-gitlab-application-secret]  ## If external GitLab, use gitlab-application-secret
 
   registryName:              &registryName                  [gitlab-registry]
   registryURL:               &registryURL                   https://[gitlab-registry]
@@ -46,10 +43,6 @@ global:
       value:  [random]        ## openssl rand -hex 32
     ## Admin password for Keycloak
     password:
-      value:  [random]        ## openssl rand -hex 32
-  jupyterhub:
-    ## Postgres password for the jupyterhub database
-    postgresPassword:
       value:  [random]        ## openssl rand -hex 32
   gateway:
     ## clientSecret: # use `uuidgen -r`
@@ -193,56 +186,12 @@ notebooks:
     url: *gitlabURL
     registry:
       host: *registryName
-  jupyterhub:
-    ## Configure rbac
-    rbac:
-      enabled: true
-    hub:
-      ## Secret used for signing JH cookies. Must be explicitly set, otherwise all
-      ## users are logged out whenever the hub pod is recreated!
-      ## See https://zero-to-jupyterhub.readthedocs.io/en/latest/reference/reference.html#hub-cookiesecret
-      cookieSecret:  [random]        ## openssl rand -hex 32
-      baseUrl: '/jupyterhub/'
-      db:
-        type: postgres
-        url: postgres+psycopg2://jupyterhub@renku-postgresql:5432/jupyterhub
-      services:
-        ## Set the notebooks service API token
-        notebooks:
-          apiToken:   [random]        ## openssl rand -hex 32
-        ## define the client ID and secret for the gateway
-        gateway:
-          oauth_client_id: &gwJHclientId gateway
-          apiToken: &gwJHclientSecret  [random]        ## openssl rand -hex 32
-          oauth_redirect_uri: *oauth_redirect_uri
-      extraEnv:
-        - name: GITLAB_URL
-          value: *gitlabURL
-        - name: DEBUG
-          value: "1"
-        - name: JUPYTERHUB_SPAWNER_CLASS
-          value: spawners.RenkuKubeSpawner
-        - name: PGPASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: renku-jupyterhub-postgres
-              key: jupyterhub-postgres-password
-    proxy:
-      ## Must be set explicitly, generate using `openssl rand -hex 32`
-      secretToken:   [random]        ## openssl rand -hex 32
-
-    ## Configure Jupyterhub to use GitLab as OAuth2 provider
-    auth:
-      gitlab:
-        clientId: *hubGitlabClientId
-        clientSecret: *hubGitlabClientSecret
-        callbackUrl: *jupyterhub_gitlab_callbackUrl
-    ## Store encrypted auth state in the JH db (enabled by default).
-    ## Key for encryption must be set explicitly!
-    ## See https://zero-to-jupyterhub.readthedocs.io/en/latest/reference/reference.html?highlight=cryptokey#auth-state
-      state:
-        enabled: true
-        cryptoKey:    [random]        ## openssl rand -hex 32
+  userSessionPersistentVolumes:
+    enabled: true
+  oidc:
+    clientSecret:   [random]        ## openssl rand -hex 32
+    token_url: *notebookSessionTokenUrl
+    auth_url: *notebookSessionAuthUrl  
 
 ## Configuration for the Gateway service
 gateway:
@@ -250,9 +199,6 @@ gateway:
   gitlabClientId: *gitlabClientId
   gitlabClientSecret: *gitlabClientSecret
   secretKey: &gateway_secretKey   [random]        ## openssl rand -hex 32
-  jupyterhub:
-    clientId: *gwJHclientId
-    clientSecret: *gwJHclientSecret
   graph:
     sparql:
       username: renku

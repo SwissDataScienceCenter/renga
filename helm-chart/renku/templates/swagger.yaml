@@ -27,7 +27,7 @@ spec:
               value: >
                 [
                   {"url": "/api/renku/spec.json", "name": "core service"},
-                  {"url": "/jupyterhub/services/notebooks/api/v1/spec", "name": "notebooks service"}
+                  {"url": "/api/notebooks/spec.json", "name": "notebooks service"}
                 ]
             - name: OAUTH2_REDIRECT_URL
               value: https://{{ .Values.global.renku.domain }}/swagger/oauth2-redirect.html

@@ -35,7 +35,7 @@ object JupyterLabPage {
 
 class JupyterLabPage(projectSlug: String, namespace: String)
     extends RenkuPage(
-      path = s"/jupyterhub/user/$namespace/$projectSlug",
+      path = s"/sessions/$projectSlug",
       title = "JupyterLab"
     ) {
 

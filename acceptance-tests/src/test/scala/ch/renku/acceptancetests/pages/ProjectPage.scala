@@ -294,7 +294,7 @@ class ProjectPage(val projectSlug: String, val namespace: String)
     }
 
     def connectToJupyterLabLink(implicit webDriver: WebDriver): WebElement = eventually {
-      findAll(cssSelector("a[href*='jupyterhub/user/']"))
+      findAll(cssSelector("table a[href*='/sessions/'][role='button']"))
         .find(_.text == "Connect")
         .getOrElse(fail("Connect to environment button not found"))
     }
@@ -322,10 +322,10 @@ class ProjectPage(val projectSlug: String, val namespace: String)
       }
 
       def connectToJupyterLab(implicit webDriver: WebDriver, spec: AcceptanceSpec): Unit =
-        connectToJupyterLab(s"a[href*='/jupyterhub/user/']")
+        connectToJupyterLab(s"table a[href*='/sessions/'][role='button']")
 
       def connectToAnonymousJupyterLab(implicit webDriver: WebDriver, spec: AcceptanceSpec): Unit =
-        connectToJupyterLab(s"table a[href*='/jupyterhub-tmp/user/']")
+        connectToJupyterLab(s"table a[href*='/sessions/'][role='button']")
 
       def connectButton(buttonSelector: String)(implicit webDriver: WebDriver): WebElement = eventually {
         find(
